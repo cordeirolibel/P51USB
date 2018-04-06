@@ -12,7 +12,7 @@ reset:
 	
 loop:
 	LCALL a2pins
-	LCALL meioseg
+	LCALL tresseg
 	
 	INC R0
 	CJNE R0,#08,loop 
