@@ -1,0 +1,24 @@
+ORG 0000h
+	JMP inicio
+	ORG 100h
+inicio:
+	JNB P3.4, pisca
+	JMP inicio
+pisca:
+	SETB P3.6
+	CALL delay
+	CLR P3.6
+	CALL delay
+	JMP inicio
+
+	;Subrotina
+delay: 
+	MOV R0, #05h
+loop1: MOV R1, #0FFh
+loop: MOV R2, #0FFh
+	DJNZ R2, $
+	DJNZ R1, loop
+	DJNZ R0, loop1
+	RET
+
+END

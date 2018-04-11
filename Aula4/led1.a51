@@ -1,8 +1,6 @@
-
-
-
-
-
+;Tarefa 1) Desenvolver um pisca led contínuo. Utilizar 1 LED (pode ser um led da própria placa)
+;para indicar um sinal de alerta. O LED deve piscar da seguinte forma:
+;- Ficar 3 segundos aceso e 1 segundo apagado.
 
 #include "at89c5131.h"
 

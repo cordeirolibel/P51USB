@@ -1,3 +1,8 @@
+;Tarefa 3) Fazer um contador simples progressivo de módulo 8 e apresentar a contagem através
+;de 3 leds. Semelhante ao vídeo do link (https://www.youtube.com/watch?v=LHFPT4_iMn0).
+;NÃO É NECESSÁRIO VARIAR A VELOCIDADE COM QUE OS LEDS FICAM ACESOS. Cada estado deve
+;permanecer ativado durante 3 segundos.
+
 
 #include "at89c5131.h"
 ; Definições da P51USB

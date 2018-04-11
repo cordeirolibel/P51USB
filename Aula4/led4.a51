@@ -1,3 +1,8 @@
+;Tarefa 4) Realizar o deslocamento de 3 LEDs de um lado para o outro. Primeiramente, deve-se
+;ascender 3 leds um seguido do outro e mantê-los acesos, respeitando a seguinte ordem (LED1
+;– ascende, LED2 – ascende, LED3 - ascende), depois apagar os leds na seguinte ordem (LED3 –
+;apaga, LED2 – apaga, LED1 – apaga). Está rotina deve ficar sendo executada por tempo
+;indeterminado.
 
 #include "at89c5131.h"
 ; Definições da P51USB

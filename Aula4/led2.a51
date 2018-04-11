@@ -1,3 +1,8 @@
+;Tarefa 2) Desenvolver um pisca led que seja acionado através de 1 botão (pode ser o botão e o
+;led da placa). Funcionamento: após pressionar e soltar o botão, o led deve ficar 1 segundo aceso
+;e 1 segundos apagado por tempo indeterminado. Quando o botão for pressionado e solto
+;novamente o led deve permanecer apagado (como o pisca alerta de um veículo).
+
 #include "at89c5131.h"
 ; Definições da P51USB
 LED3 EQU P1.4
