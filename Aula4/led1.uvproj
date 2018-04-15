@@ -46,7 +46,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\Objects\</OutputDirectory>
-          <OutputName>led3</OutputName>
+          <OutputName>led1</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -363,13 +363,6 @@
       <Groups>
         <Group>
           <GroupName>Source Group 1</GroupName>
-          <Files>
-            <File>
-              <FileName>led3.a51</FileName>
-              <FileType>2</FileType>
-              <FilePath>.\led3.a51</FilePath>
-            </File>
-          </Files>
         </Group>
       </Groups>
     </Target>
