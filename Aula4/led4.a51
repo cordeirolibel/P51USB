@@ -13,6 +13,15 @@ LED3 EQU P1.4
 ORG 0000h
 	
 loop:
+	CLR 0x20.0
+	SETB 0x20.1
+	CLR 0x20.2
+	SETB 0x20.3
+	CLR 0x21.0
+	SETB 0x21.1
+	CLR 0x21.2
+	SETB 0x21.3
+	
 	;liga LEDs
 	CLR LED1
 	LCALL meioseg
