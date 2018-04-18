@@ -1,6 +1,5 @@
-
-
-;======= Pinos Teclado
+#include "at89c5131.h"
+; Pinos Teclado
 tec_A1 EQU P3.7   
 tec_A2 EQU P3.6 
 tec_A3 EQU P3.5 
@@ -9,19 +8,44 @@ tec_B1 EQU P3.3
 tec_B2 EQU P3.2 
 tec_B3 EQU P3.1 
 tec_B4 EQU P3.0
-LED3 EQU P1.4
 
-ORG 0000h
+; Display
+en    EQU     	P2.7   ;P3.5 enable display
+rs    EQU     	P2.5    ;P3.4 alterna entre comando e dado (0-comando 1-dado) 
+rw	  EQU		P2.6
+dado  EQU		P0
+
+LED3 EQU P1.4
 	
+ORG 00h
+jmp inicio
+
+ORG 33h
+
+inicio: 
+    call inidisp
+	call escrevemsg
+		
 ;muda o estado do led se botao '1' pressionado
-loop:
+loop_tcl:
 	CALL read_tcl
-	JB 0x20.0,press
-		SETB LED3
-	JMP loop
+	JB 0x20.0, press
+		
+	JMP loop_tcl
 press:
-		CLR LED3
-	JMP loop
+	CALL read_tcl
+	JB 0x20.0, press
+		
+	;troca mensagem
+	CJNE R2,#0h,r0e1
+		CALL escrevemsg
+		MOV R2, #01h
+		JMP loop_tcl
+r0e1:
+		CALL escrevemsg2
+		MOV R2, #00h
+		
+	JMP loop_tcl
 	
 	
 ;================================
@@ -75,7 +99,7 @@ press_rd:
 	;====================
 	;=======> ch
 	; changed?
-ch:
+change:
 	JB tec_A1, not_press_ch; pula se tec_A1==1
 		;button press 
 		JNB 0x20.0, read ;changed
@@ -101,7 +125,7 @@ lp1_ms:
 		lp2_ms:
 			DJNZ R5,lp2_ms	;250*2*2
 		DJNZ R4,lp1_ms		;250*2
-	JMP ch
+	JMP change
 	
 	
 ;================================================
@@ -127,5 +151,89 @@ lp1:
 	DJNZ R4,lp1						;255*2
 	;endfor
 	RET
-	
+
+
+
+
+;Inicializacao do display
+;------------------------------------------------------------------------;
+;Rotina que inicializa o display para o uso                              ;
+;nao tem dados de entrada e nao devolve nada                             ;
+;------------------------------------------------------------------------;
+; usa r0,r1,a,dptr
+;
+inidisp:    	mov dado,#38h
+            CALL comdisp
+			call delay2
+				mov dado,#38h
+            CALL comdisp
+			call delay2
+				MOV dado,#06h
+            CALL comdisp
+				call delay2
+				MOV dado,#0eh
+            CALL comdisp
+				call delay2
+				MOV dado,#01H
+            CALL comdisp
+				call delay2
+            RET
+
+dadodisp:   clr  en
+			clr rw
+            setb rs
+            setb en
+            call delay
+            clr  en
+            ret
+
+comdisp:    clr  en
+           	clr rw
+		    clr  rs
+            setb en
+            call delay
+            clr  en
+            ret
+
+clearLCD:
+		mov dado, #02h
+		call comdisp
+		call delay2
+		ret
+
+escrevemsg:	   call clearLCD
+               mov  dptr,#mensagem  
+			   jmp escrevemsgloop
+			   
+escrevemsg2:	   call clearLCD
+					mov  dptr,#mensagem2  
+escrevemsgloop:		clr a
+					movc  a,@a+dptr
+					cjne a, #00h, continuemsg
+					jmp exitmsg
+continuemsg:
+					mov dado, a
+					call dadodisp
+					call delay2
+					inc dptr
+					cjne a, #00h, escrevemsgloop
+exitmsg:
+					ret
+
+ org 500h
+mensagem:  DB 'UTFPR 2018                              GABRIEL GUSTAVO',0 
+mensagem2:  DB 'UTFPR 2020                              GUSTAVO GABRIEL',0 
+
+delay:      mov r0,#0FH
+loop:			mov r1, #0FH
+				djnz r1,$
+			   djnz r0, loop
+			   ret
+			   
+delay2:      mov r0,#0FFH
+loop2:		mov r1, #0FFH
+				djnz r1,$
+			   djnz r0, loop2
+			   ret
+			   
 END
