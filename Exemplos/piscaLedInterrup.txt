@@ -1,0 +1,40 @@
+#include "at89c5131.h"
+LED1 EQU P1.4
+
+ORG 0000h
+
+SJMP main
+
+	ORG 000Bh
+	;CLR EA
+	CALL timerInter
+	;CLR P1.0
+	RETI
+
+main:
+	;CLR P1.0
+	SETB ET0
+	MOV TMOD, #01h
+	MOV TH0, #05h
+	MOV TL0, #67h
+	SETB EA
+	SETB TR0
+	;SETB P1.0
+	SJMP $
+	
+	
+timerInter:
+	
+	CJNE R1, #01h, pula
+	CLR LED1
+	MOV R1, #0h
+	RET
+	
+	pula:
+		SETB LED1
+		MOV R1, #1h
+		RET
+	
+END
+	
+	
