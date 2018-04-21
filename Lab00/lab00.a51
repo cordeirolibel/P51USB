@@ -23,18 +23,28 @@ jmp inicio
 ORG 33h
 
 inicio: 
+	
     CALL inidisp
 	CALL escrevemsg
 		
 ;muda o estado do led se botao '1' pressionado
 loop_main:
-	CALL click_tcl ;R4 <- botao
-	MOV R6, R4
-	CALL save_num ;R4 <- mult, R5 <- RAM
+
+	;R4 <- botao
+	CALL click_tcl 
+	;salva em R6 o resultado em R4
+	MOV A, R4 
+	MOV R6, A
 	
+	;R4 <- mult, R5 <- RAM
+	CALL save_num 
+	
+	;salva na memoria a mensagem:
 	;  "Tabuada do R6"
 	;  "R6*R5 = R4"
 	CALL criar_msg
+	
+	;manda para o lcd
 	CALL escrevemsg_tab
 	
 	JMP loop_main
@@ -43,24 +53,128 @@ loop_main:
 ;=========== Calculadora ============
 ;===================================
 
-;
+;Salva na memoria a seguinte mensagem
 ;  "Tabuada do R6"
 ;  "R6*R5 = R4"
+; usa R0
 criar_msg:
+	
 	MOV  dptr, #mensagem_tab  
 	
-	MOV A, #0Bh
-	;dptr += A
-	;memoria[dprt] = R6
+	;======================
+	;  "Tabuada do [R6]"
+	;  "R6*R5 = R4"
+
+	MOV R0, #0Bh
+	;==> dptr += R0
+sum_dptr1:
+	INC dptr
+	DJNZ R0,sum_dptr1
 	
+	;==> memoria[dprt] = R6
+	MOV A, R6
+	MOV R0, A
+	CALL save_one_numb
 	
-	MOV A
+	;======================
+	;  "Tabuada do R6"
+	;  "[R6]*R5 = R4"
+
+	MOV R0, #1Bh
+	;==> dptr += R0
+sum_dptr2:
+	INC dptr
+	DJNZ R0,sum_dptr2
+	
+	;==> memoria[dprt] = R6
+	MOV A, R6
+	MOV R0, A
+	CALL save_one_numb
+	
+	;======================
+	;  "Tabuada do R6"
+	;  "R6[*]R5 = R4"
+	MOV A, #2Ah ;2Ah = '*' ascii
+	MOVX @dptr,A
+	INC dptr
+	
+	;======================
+	;  "Tabuada do R6"
+	;  "R6*[R5] = R4"
+	
+	;==> memoria[dprt] = R5
+	MOV A, R5
+	MOV R0, A
+	CALL save_one_numb
+	
+	;======================
+	;  "Tabuada do R6"
+	;  "R6*R5[ = ]R4"
+	
+	MOV A, #20h ;20h = ' ' ascii
+	MOVX @dptr,A
+	INC dptr
+	
+	MOV A, #3Dh ;3Dh = '=' ascii
+	MOVX @dptr,A
+	INC dptr
+	
+	MOV A, #20h ;20h = ' ' ascii
+	MOVX @dptr,A
+	INC dptr
+	
+	;======================
+	;  "Tabuada do R6"
+	;  "R6*R5 = [R4]"
+	
+	;==> memoria[dprt] = R4
+	MOV A, R4
+	MOV R0, A
+	CALL save_one_numb
+	
 	RET
 
+;============================================
+; sava R0 numero em decimal na memoria
+; na regiao apontada por dprt
+; usa A,B, R0
 
-
-
-
+save_one_numb:
+	MOV A, #09h
+	SUBB A, R0
+	
+	;se der carry
+	JC more_than_ten
+		;r0<10
+		;primeiro digito
+		MOV A, #30h ;00110000b = 30h = '0' ascii
+		MOVX @dptr,A
+		
+		INC dptr
+		
+		;segundo digito
+		MOV A, R0
+		ADD A, #30h ;00110000b = 30h
+		MOVX @dptr,A
+		
+more_than_ten:
+		;r0>=10
+		;primeiro digito
+		MOV A, R0
+		MOV B, #0Ah
+		DIV AB   ; A = A/B, B = A%B 
+		ADD A, #30h ;00110000b = 30h
+		MOVX @dptr,A
+		
+		INC dptr
+		
+		;segundo digito
+		MOV A, B
+		ADD A, #30h ;00110000b = 30h = '0' ascii
+		MOVX @dptr,A	
+	
+	INC dptr
+	RET
 
 
 
