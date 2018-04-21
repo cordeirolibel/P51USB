@@ -1,3 +1,37 @@
+;========================================================
+; 2018 - UTFPR
+; https://gitlab.com/gabrielsouzaesilva
+; https://github.com/cordeirolibel/
+;========================================================
+;
+;CSW40 - Sistemas Microcontrolados
+;LABORATÓRIO 00 - LCD E TECLADO MATRICIAL
+;
+;Roteiro: Interface via módulo display LCD 16x2 e teclado matricial (mínimo 3x4). Modo de
+;operação livre para as equipes porém deve ter os seguintes requisitos mínimos:
+;
+;1. Implementar as tabuadas de 1 a 9.
+;
+;2. A cada vez que uma tecla for pressionada a tabuada daquele número deve ser mostrada no
+;LCD e depois incrementada. Por exemplo, número 3 pressionado 1 vez ele efetua a operação
+;3x0 e mostra no display “3x0=0”. Quando pressionado pela segunda vez ele efetua a operação
+;3x1 e mostra no display “3x1=3”... Se outro número for pressionado, a tabuada daquele outro
+;número começa do 0, enquanto a tabuada do 3 volta de onde parou quando solicitado.
+;
+;3. O que será escrito adicionalmente no display fica por conta da equipe, por exemplo, uma
+;frase de saudação ao iniciar o programa. E depois deixar uma frase na primeira linha, “tabuada
+;do número x” e na segunda linha a multiplicação.
+;
+;4. Quando chegar ao último valor da tabuada daquele número, por exemplo, supondo a
+;tabuada do 9 (última operação 9x10), um relé deve ser disparado por 3 segundos. LEMBRAR
+;DE POLARIZAR UM TRANSISTOR. O relé deve estar conectado com qualquer dispositivo, por
+;exemplo, lâmpada ou buzzer.
+;Observação: O bounce das teclas deve ser tratado via hardware ou software.
+
+
+
+
+
 #include "at89c5131.h"
 ; Pinos Teclado
 tec_A1 EQU P3.1   
@@ -16,7 +50,8 @@ rw	  EQU		P2.6
 dado  EQU		P0
 
 LED3 EQU P1.4
-	
+
+
 ORG 00h
 jmp inicio
 
@@ -223,7 +258,7 @@ save_num:
 	;if (R5==10) R5 = 0
 	CJNE R5,#11,menor_q_10
 		MOV R5, #00h
-		; colocar ak um buzzer ========================================
+		CALL rele ;evento de multiplicacao
 menor_q_10:
 	MOV A, R5
 	MOV @R0, A
@@ -236,6 +271,25 @@ menor_q_10:
 	MOV R4, A
 	
 	RET
+	
+	
+
+;===============================================
+; rele disparado por 3 segundos
+rele:
+	SETB LED3
+	;3 seg
+	CALL meioseg
+	CALL meioseg
+	CALL meioseg
+	CALL meioseg
+	CALL meioseg
+	CALL meioseg
+	
+	CLR LED3
+	RET
+	
+
 ;================================
 ;=========== TECLADO ============
 ;
