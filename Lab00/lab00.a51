@@ -95,7 +95,9 @@ inicio:
 	
 	mov dptr, #waitMsg2
 	call writeMsg	
-		
+	
+	CLR LED3
+	
 ;muda o estado do led se botao '1' pressionado
 loop_main:
 
@@ -111,11 +113,13 @@ loop_main:
 	;salva na memoria a mensagem:
 	;  "Tabuada do R6"
 	;  "R6*R5 = R4"
-	CALL criar_msg
 	
 	MOV  dptr, #tabMsg
 	call clearLCD
 	call writeMsg
+	
+	CALL criar_msg
+
 	
 	;manda para o lcd
 	;CALL escrevemsg_tab
@@ -131,8 +135,6 @@ loop_main:
 ;  "R6*R5 = R4"
 ; usa R0
 criar_msg:
-	
-	MOV  dptr, #tabMsg
 	
 	;======================
 	;  "Tabuada do [R6]"
@@ -152,12 +154,8 @@ sum_dptr1:
 	;======================
 	;  "Tabuada do R6"
 	;  "[R6]*R5 = R4"
-
-	MOV R0, #1Bh
-	;==> dptr += R0
-sum_dptr2:
-	INC dptr
-	DJNZ R0,sum_dptr2
+	
+	call nextLine
 	
 	;==> memoria[dprt] = R6
 	MOV A, R6
@@ -168,7 +166,8 @@ sum_dptr2:
 	;  "Tabuada do R6"
 	;  "R6[*]R5 = R4"
 	MOV A, #2Ah ;2Ah = '*' ascii
-	MOVX @dptr,A
+	MOV dado, A
+	call dadodisp
 	INC dptr
 	
 	;======================
@@ -185,15 +184,18 @@ sum_dptr2:
 	;  "R6*R5[ = ]R4"
 	
 	MOV A, #20h ;20h = ' ' ascii
-	MOVX @dptr,A
+	MOV dado, A
+	call dadodisp
 	INC dptr
 	
 	MOV A, #3Dh ;3Dh = '=' ascii
-	MOVX @dptr,A
+	MOV dado, A
+	call dadodisp
 	INC dptr
 	
 	MOV A, #20h ;20h = ' ' ascii
-	MOVX @dptr,A
+	MOV dado, A
+	call dadodisp
 	INC dptr
 	
 	;======================
@@ -213,6 +215,8 @@ sum_dptr2:
 ; usa A,B, R0
 
 save_one_numb:
+	MOV A, R0
+	MOV R3, A
 	MOV A, #09h
 	SUBB A, R0
 	
@@ -221,14 +225,22 @@ save_one_numb:
 		;r0<10
 		;primeiro digito
 		MOV A, #30h ;00110000b = 30h = '0' ascii
-		MOVX @dptr,A
+		;;
+		MOV dado, A
+		
+		call dadodisp
 		
 		INC dptr
 		
 		;segundo digito
-		MOV A, R0
+		MOV A, R3
 		ADD A, #30h ;00110000b = 30h
-		MOVX @dptr,A
+		;;
+		MOV dado, A
+		call dadodisp
+		
+		INC dptr
+		RET
 		
 more_than_ten:
 		;r0>=10
@@ -237,17 +249,21 @@ more_than_ten:
 		MOV B, #0Ah
 		DIV AB   ; A = A/B, B = A%B 
 		ADD A, #30h ;00110000b = 30h
-		MOVX @dptr,A
+		;;
+		MOV dado, A
+		call dadodisp
 		
 		INC dptr
 		
 		;segundo digito
 		MOV A, B
 		ADD A, #30h ;00110000b = 30h = '0' ascii
-		MOVX @dptr,A	
+		;;
+		MOV dado, A
+		call dadodisp
 	
-	INC dptr
-	RET
+		INC dptr
+		RET
 
 
 
@@ -780,6 +796,10 @@ lp1_ms:
 ; usa r4,r5,r6
 ;
 meioseg:
+	MOV 2ch, R4
+	MOV 2dh, R5
+	MOV 2eh, R6
+	
 	;for(r4=255;r4!=0;r4--)
 	MOV R4, #255					;1
 lp1:
@@ -796,9 +816,15 @@ lp1:
 		;endfor
 	DJNZ R4,lp1						;255*2
 	;endfor
+	
+	
+	MOV R6, 2eh
+	MOV R5, 2dh
+	MOV R4, 2ch
+	
 	RET
 
-
+	
 
 
 ;Inicializacao do display
@@ -894,7 +920,7 @@ mensagem:  DB 'Tabuada',0
 msgEquipe:  DB 'Gabriel Gustavo',0 
 waitMsg1: DB 'Pressione uma', 0
 waitMsg2: DB 'tecla ...', 0
-tabMsg: DB 'Tabuada do                                                             ', 0
+tabMsg: DB 'Tabuada do ', 0
 
 
 delay:      mov r0,#0FH
