@@ -31,7 +31,6 @@
 
 
 
-
 #include "at89c5131.h"
 ; Pinos Teclado
 tec_A1 EQU P3.1   
@@ -51,16 +50,51 @@ dado  EQU		P0
 
 LED3 EQU P1.4
 
-
-ORG 00h
+ORG 2000h
 jmp inicio
 
-ORG 33h
+ORG 2033h
 
 inicio: 
+	mov dptr, #2533h
+	mov a, #030h
+	movx @dptr, a
+	nop
+	movx a, @dptr
+	nop
+	mov a, #1h
+	movc a, @a+dptr
 	
+	call clearRAM
     CALL inidisp
-	CALL escrevemsg
+	
+	; Escreve msg inicial
+	mov dptr, #mensagem
+	CALL writeMsg
+	
+	; Pula linha
+	call nextLine
+
+	mov dptr, #msgEquipe
+	call writeMsg
+	
+	; Algum tempo
+	call delay2
+	call delay2
+	call delay2
+	call delay2
+	call delay2
+	call delay2
+	
+	call clearLCD
+	
+	mov dptr, #waitMsg1
+	call writeMsg
+	
+	call nextLine
+	
+	mov dptr, #waitMsg2
+	call writeMsg	
 		
 ;muda o estado do led se botao '1' pressionado
 loop_main:
@@ -79,8 +113,12 @@ loop_main:
 	;  "R6*R5 = R4"
 	CALL criar_msg
 	
+	MOV  dptr, #tabMsg
+	call clearLCD
+	call writeMsg
+	
 	;manda para o lcd
-	CALL escrevemsg_tab
+	;CALL escrevemsg_tab
 	
 	JMP loop_main
 	
@@ -94,7 +132,7 @@ loop_main:
 ; usa R0
 criar_msg:
 	
-	MOV  dptr, #mensagem_tab  
+	MOV  dptr, #tabMsg
 	
 	;======================
 	;  "Tabuada do [R6]"
@@ -321,16 +359,16 @@ rele:
 
 ;==================================================
 ;Fica em loop ate uma tecla ser apertada e solta
-; retorna em R4 a tecla
+; retorna em R4 a tecla. (Usa A, R0, R2, R4)
 click_tcl:
 	CALL read_tcl
 	
 	;===================================
 	;esperando uma tecla 
-	MOV R0, 20h
+	MOV R0, #20h
 	MOV A, @R0
 	CJNE A, #00h, wait_depress1
-	MOV R0, 21h
+	MOV R0, #21h
 	MOV A, @R0
 	CJNE A, #00h, wait_depress2
 	JMP click_tcl
@@ -338,43 +376,51 @@ click_tcl:
 	;===================================
 	;esperando soltar RAM(0x20)
 wait_depress1:
-	MOV R4, A
-	
-	MOV R0, 20h
+	MOV R2, A
+	call read_tcl
+	MOV R0, #20h
 	MOV A, @R0
 	CJNE A, #00h, wait_depress1
 	
 	;===================================
 	;converter r4 para botao 
-	MOV A, R4
-	MOV R4, #00h
+	MOV A, R2
+	MOV R2, #00h
+	clr c
 verifyBit1:
-	RR A
-	INC R4
+	RRC A
+	clr c
+	INC R2
 	CJNE A, #00h, verifyBit1
-	DEC R4
+	DEC R2
+	MOV A, R2
+	MOV R4, A
 	RET
 	
 	;===================================
 	;esperando soltar RAM(0x21)
 wait_depress2:
-	MOV R4, A
+	MOV R2, A
 	
-	MOV R0, 21h
+	CALL read_tcl
+	
+	MOV R0, #21h
 	MOV A, @R0
 	CJNE A, #00h, wait_depress2
 	
 	;===================================
 	;converter r4 para botao 
-	MOV A, R4
-	MOV R4, #00h
+	MOV A, R2
+	MOV R2, #00h
+	clr c
 verifyBit2:
-	RR A
-	INC R4
+	RRC A
+	clr c
+	INC R2
 	CJNE A, #00h, verifyBit2
-	MOV A,R4
+	MOV A,R2
 	ADD A,#07h
-	MOV R4,A
+	MOV R4, A
 	
 	RET
 
@@ -778,7 +824,7 @@ inidisp:    	mov dado,#38h
             CALL comdisp
 				call delay2
             RET
-
+; ======================================================================= ;
 dadodisp:   clr  en
 			clr rw
             setb rs
@@ -786,7 +832,7 @@ dadodisp:   clr  en
             call delay
             clr  en
             ret
-
+; ======================================================================= ;
 comdisp:    clr  en
            	clr rw
 		    clr  rs
@@ -794,38 +840,61 @@ comdisp:    clr  en
             call delay
             clr  en
             ret
-
+; ======================================================================= ;
+; Limpa LCD e volta cursor para o inicio
 clearLCD:
-		mov dado, #01h ;02h
+		mov dado, #01h ;02h = Sobre escreve msg
 		call comdisp
 		call delay2
 		ret
+; ======================================================================= ;
+; Pula linha
+nextLine:	mov dado, #0C0h
+			CALL comdisp
+			call delay2
+			ret
 
-escrevemsg:   call clearLCD
-               mov  dptr,#mensagem  
-			   jmp escrevemsgloop
-			   
-escrevemsg_tab:call clearLCD
-               mov  dptr,#mensagem_tab  
-			   jmp escrevemsgloop
-			   
-			   
-escrevemsgloop:		clr a
+; ======================================================================= ;
+; Escreve mensagem
+writeMsg:	clr a
 					movc  a,@a+dptr
-					cjne a, #00h, continuemsg
+					
+					cjne a, #00h, continuemsg ; Exclui bug ultimo caractere
 					jmp exitmsg
-continuemsg:
-					mov dado, a
+continuemsg:			
+					mov dado,a
 					call dadodisp
 					call delay2
 					inc dptr
-					cjne a, #00h, escrevemsgloop
-exitmsg:
+					cjne a, #00h, writeMsg
+	exitmsg:
 					ret
 
- org 500h
-mensagem_tab:  DB 'Tabuada do ',0 
-mensagem:  DB 'Tabuada         Gabriel Gustavo',0 
+; ======================================================================= ;
+; Limpa memoria
+clearRAM:
+		mov 20h, #00h
+		mov 21h, #00h
+		mov 22h, #00h
+		mov 23h, #00h
+		mov 24h, #00h
+		mov 25h, #00h
+		mov 26h, #00h
+		mov 27h, #00h
+		mov 28h, #00h
+		mov 29h, #00h
+		mov 2Ah, #00h
+		mov 2Bh, #00h
+		ret
+; ======================================================================= ;
+
+
+ org 2500h
+mensagem:  DB 'Tabuada',0 
+msgEquipe:  DB 'Gabriel Gustavo',0 
+waitMsg1: DB 'Pressione uma', 0
+waitMsg2: DB 'tecla ...', 0
+tabMsg: DB 'Tabuada do                                                             ', 0
 
 
 delay:      mov r0,#0FH
