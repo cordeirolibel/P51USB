@@ -55,7 +55,9 @@ jmp inicio
 
 ORG 2033h
 
-inicio: 
+inicio:
+	clr LED3
+	
 	mov dptr, #2533h
 	mov a, #030h
 	movx @dptr, a
@@ -96,8 +98,6 @@ inicio:
 	mov dptr, #waitMsg2
 	call writeMsg	
 	
-	CLR LED3
-	
 ;muda o estado do led se botao '1' pressionado
 loop_main:
 
@@ -119,11 +119,10 @@ loop_main:
 	call writeMsg
 	
 	CALL criar_msg
-
 	
-	;manda para o lcd
-	;CALL escrevemsg_tab
-	
+	CJNE R5, #10, notBuzz
+		CALL rele ;evento de multiplicacao
+notBuzz:	
 	JMP loop_main
 	
 ;================================
@@ -312,7 +311,8 @@ save_num:
 	;if (R5==10) R5 = 0
 	CJNE R5,#11,menor_q_10
 		MOV R5, #00h
-		CALL rele ;evento de multiplicacao
+		;CALL rele ;evento de multiplicacao
+		
 menor_q_10:
 	MOV A, R5
 	MOV @R0, A
@@ -929,7 +929,7 @@ loop:			mov r1, #0FH
 			   djnz r0, loop
 			   ret
 			   
-delay2:      mov r0,#0FFH
+delay2:      mov r0,#07FH
 loop2:		mov r1, #0FFH
 				djnz r1,$
 			   djnz r0, loop2
