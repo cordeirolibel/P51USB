@@ -56,8 +56,8 @@ jmp inicio
 ORG 2033h
 
 inicio:
-	clr LED3
-	
+	CLR LED3
+
 	mov dptr, #2533h
 	mov a, #030h
 	movx @dptr, a
