@@ -57,38 +57,117 @@ main:
     CALL inidisp
 	
 	CALL le_n_voltas
+	CALL le_sentido
 	
 	JMP $
+		
+; ======================================================================= ;	
+; LE SENTIDO DE ROTAÇÃO
 
-;================================
-; retorna em r4 numero de voltas
-; usa R4, A, B
+le_sentido:
+	CALL clearLCD
+	MOV dptr, #mensagemSentido
+	CALL writeMsg
+	
+	CALL nextLine
+	
+	MOV dptr, #mensagemSentido2
+	CALL writeMsg
+	
+	RET
+
+; ======================================================================= ;	
+; LE NUMERO DE VOLTAS
+; retorna em R6 numero de voltas
+; usa R4, R7, A, B
 le_n_voltas:
-
+	
+	MOV R7, #00h
+	MOV R6, #00h
 	MOV A, #00h
-
+	CALL clearLCD
+	
 le_n_voltas2:
-	call clearLCD
-	MOV R0, A
-	CALL save_one_numb
+	
+	;MOV R0, A
+	;CALL save_one_numb
 	
 	;R4 <- botao
-	CALL click_tcl 
+	CALL click_tcl
 	
 	;if (R4==ENTER)
 	CJNE R4, #0Bh, not_enter ;11
-		MOV R4, A
-		RET
-
+	; verif enter sem nd em voltas
+	;MOV R4, A
+	CJNE R6, #01h, limpaLCD
+	CLR LED3
+	RET
+	
+limpaLCD:
+	SETB LED3
+	CALL clearLCD
+	RET
+	
 not_enter:
+	;if 1 click = unidade
+	CJNE R7, #00h, segDigito
+	
+	MOV A, R4 ; Passa o valor da tecla para acc
+	MOV R6, A 
+	ADD A, #30h ; 0011000b + 0000xxxxb Para escrever digitos no display
+	
+	; Escreve primeiro digito
+	MOV dado, A
+	CALL dadodisp
+	
+	INC R7
+	JMP le_n_voltas2
+	
+	;else if 2 clicks = dez.uni
+segDigito:
+	CJNE R7, #01h, terDigito
+	
+	MOV A, R4 ; Passa o valor da tecla para acc
+	ADD A, #30h ; 0011000b + 0000xxxxb Para escrever digitos no display
+	
+	; Escreve segundo digito
+	MOV dado, A
+	CALL dadodisp
+	
+	MOV A, R6
 	MOV B, #0Ah
 	MUL AB
 	ADD A, R4
+	MOV R6, A
+	
+	INC R7
+	
+	JMP le_n_voltas2
+	
+	;else if 3 clicks = cent.dez.uni
+terDigito:
+	CJNE R7, #02h, le_n_voltas2
+	MOV A, R4 ; Passa o valor da tecla para acc
+	ADD A, #30h ; 0011000b + 0000xxxxb Para escrever digitos no display
+	
+	; Escreve terceiro digito
+	MOV dado, A
+	CALL dadodisp
+	
+	MOV A, R6
+	MOV B, #0Ah
+	MUL AB
+	ADD A, R4
+	MOV R6, A
+	
+	INC R7
 	JMP le_n_voltas2
 
 
-;============================================
-; sava R0 numero em decimal na memoria
+
+
+; ======================================================================= ;	
+; salva R0 numero em decimal na memoria
 ; na regiao apontada por dprt
 ; usa A,B, R0
 
@@ -103,7 +182,7 @@ save_one_numb:
 		;r0<10
 		;primeiro digito
 		MOV A, #30h ;00110000b = 30h = '0' ascii
-		;;
+		
 		MOV dado, A
 		
 		call dadodisp
@@ -876,8 +955,9 @@ clearRAM:
 ; ======================================================================= ;
 
 
- org 2500h
-mensagem:  DB 'Tabuada',0 
+ org 0500h
+mensagemSentido:  DB '0 - Anti horario',0 
+mensagemSentido2:  DB '1 - Horario',0 	
 msgEquipe:  DB 'Gabriel Gustavo',0 
 waitMsg1: DB 'Pressione uma', 0
 waitMsg2: DB 'tecla ...', 0
