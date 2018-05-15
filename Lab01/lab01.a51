@@ -22,10 +22,10 @@ LED2 EQU P3.7
 LED3 EQU P1.4
 SW1 EQU P3.2   
 	
-MOTOR1 EQU P2.0
-MOTOR2 EQU P2.2
-MOTOR3 EQU P2.1
-MOTOR4 EQU P2.3
+MOTOR4 EQU P2.0
+MOTOR3 EQU P2.2
+MOTOR2 EQU P2.1
+MOTOR1 EQU P2.3
 	
 ; Display
 en    EQU     	P2.7   ;P3.5 enable display
@@ -44,7 +44,11 @@ ORG 0003h
 ORG 000Bh
 	CALL timerInter
 	RETI
-
+	
+ORG 001Bh
+	CALL timerInter2
+	RETI
+	
 ORG 0033h
 main:
 	;set time
@@ -54,10 +58,19 @@ main:
 	MOV TL0, #00h
 	SETB TR0
 	
+	;set time2
+	CLR ET1 ;desligado
+	MOV TMOD, #11h
+	MOV TH1, #00h
+	MOV TL1, #00h
+	SETB TR1
+	
+	
 	;set interrupcao externa
-	SETB EX0 ;Enable 
+	;SETB EX0 ;Enable =====================================================================ABILITAR INT EXT
 	;SETB IE0
-	CLR IT0 ;  seleção de interrupção externa por borda (1) ou por nível (0).
+	;CLR IT0 ;  seleção de interrupção externa por borda (1) ou por nível (0).
+	SETB IT0
 	
 	;init
 	SETB EA
@@ -70,8 +83,11 @@ main:
 	;R6 = num voltas
 	CALL le_n_voltas
 	
-	;R4: 0 anti / 1 horario
+	;RAM(22.5): 0 anti / 1 horario
 	CALL le_sentido
+	
+	;velocidade: 0-50%, 1-100%
+	CALL le_velocidade
 
 	;enable motor
 	SETB 0x22.4
@@ -108,19 +124,61 @@ final_main:
 	MOV dptr, #mensagemFIM
 	CALL writeMsg
 	
-lp_final_main:
-	;pisca led
-	CLR LED2
-	CALL meioseg
-	SETB LED2
-	CALL meioseg
+	;liga inter LED
+	SETB ET1
 	
-	JMP lp_final_main
-		
+lp_final_main:
+	;R4 <- botao
+	CALL click_tcl
+	CJNE R4, #0Ah,lp_final_main
+	
+	JMP main
+	
+; ======================================================================= ;	
+; PISCA LED INTERRUP
+timerInter2:
+	JB 0x21.4, apaga_led
+	SETB 0x21.4
+	CLR LED2
+	RET
+	
+apaga_led:
+	CLR 0x21.4
+	SETB LED2
+	RET
+	
 ; ======================================================================= ;	
 ; LE SENTIDO DE ROTAÇÃO
 ; retorna em RAM(22.5) e r4
 ; 0 anti / 1 horario
+le_velocidade:
+
+	CALL clearLCD
+	MOV dptr, #mensagemVeloc
+	CALL writeMsg
+	
+	CALL nextLine
+	
+	MOV dptr, #mensagemVeloc2
+	CALL writeMsg
+	
+caractere_invalido2:	
+	;R4 <- botao
+	CALL click_tcl
+	
+	CJNE R4, #00h,pode_ser_um2
+	; 50%
+	MOV TH0, #080h
+	RET
+pode_ser_um2:
+	CJNE R4, #01h,caractere_invalido2
+	; 100%
+	MOV TH0, #0F0h
+	RET
+
+; ======================================================================= ;	
+; LE SENTIDO DE ROTAÇÃO
+; 0 50% / 1 100%
 le_sentido:
 
 	CALL clearLCD
@@ -143,7 +201,6 @@ pode_ser_um:
 	CJNE R4, #01h,caractere_invalido
 	SETB 0x22.5
 	RET
-
 
 ; ======================================================================= ;	
 ; LE NUMERO DE VOLTAS
@@ -1003,6 +1060,8 @@ mensagemVolta:  DB 'Numero de Voltas',0
 mensagemVolta2:  DB '(1-255):',0 
 mensagemSentido:  DB '0 - Anti horario',0 
 mensagemSentido2: DB '1 - Horario',0 	
+mensagemVeloc:  DB '0 -  50% Speed',0 
+mensagemVeloc2: DB '1 - 100% Speed',0 	
 mensagemNvoltas:  DB 'Num Voltas: ',0 
 mensagemFIM:  DB 'FIM!',0 
 
