@@ -17,42 +17,58 @@ tec_B1 EQU P3.0
 tec_B2 EQU P3.2 
 tec_B3 EQU P3.6 
 	
-LED1 EQU P1.4
+LED1 EQU P3.6
+LED2 EQU P3.7
+LED3 EQU P1.4
 	
 MOTOR1 EQU P2.0
-MOTOR2 EQU P2.1
-MOTOR3 EQU P2.2
+MOTOR2 EQU P2.2
+MOTOR3 EQU P2.1
 MOTOR4 EQU P2.3
 
-ORG 2000h
+ORG 0000h
 SJMP main
 
-	ORG 2033h
-	CLR EA
+ORG 000Bh
 	CALL timerInter
-	CLR P1.0
 	RETI
 
+ORG 0033h
 main:
-	CLR P1.0
+	;set time
 	SETB ET0
 	MOV TMOD, #01h
-	MOV TH0, #05h
-	MOV TL0, #67h
+	MOV TH0, #80h
+	MOV TL0, #00h
 	SETB EA
 	SETB TR0
-	SETB P1.0
-	SJMP $
+	
+	;enable motor
+	SETB 0x22.4
+	SETB LED2
+	
+	MOV 23h, #00h
+
+loop:
+	MOV A, 23h
+	CJNE A, #0Ch, continue
+	CLR TR0
+	CALL meioseg
+	CALL meioseg
+	CALL meioseg
+	CALL meioseg
+	SETB TR0
+	MOV 23h, #00h
+continue:
+	JMP loop
 
 ; ======================================================================= ;	
 ; Interrupção
 ; 
 timerInter:
-	; Verifica flag de enable
-	JB 0x22.4, girarMotor
-	RET
 
 girarMotor:
+	CLR LED2
 	; Salva registradores
 	MOV 2fh, A
 	MOV 2eh, R0
@@ -70,6 +86,8 @@ girarMotor:
 	JMP fimInter
 	
 else1:
+	SETB LED1
+	
 	CJNE A, #01h, else2
 	SETB MOTOR1
 	SETB MOTOR2
@@ -94,6 +112,8 @@ else3:
 	JMP fimInter
 	
 else4:
+	CLR LED1
+	
 	CJNE A, #04h, else5
 	CLR MOTOR1
 	CLR MOTOR2
@@ -113,8 +133,8 @@ else6:
 	CJNE A, #06h, else7
 	CLR MOTOR1
 	CLR MOTOR2
-	SETB MOTOR3
-	CLR MOTOR4
+	CLR MOTOR3
+	SETB MOTOR4
 	JMP fimInter
 	
 else7:
@@ -129,12 +149,31 @@ else8:
 fimInter:
 	; Verifica sentido de rotação
 	JB 0x22.5, sentidoRot
+	
 	;Anti-horario
+	CJNE A, #00h, nMod
+	MOV A, #07h
+	;soma +1 nos ciclos
+	MOV R0, 23h
+	INC R0
+	MOV 23h, R0
+	
+	JMP fimMotor
+nMod:	
 	DEC A
 	JMP fimMotor
 	
 sentidoRot:
 	; Horario
+	CJNE A, #07h, nMod2
+	MOV A, #00h
+	;soma +1 nos ciclos
+	MOV R0, 23h
+	INC R0
+	MOV 23h, R0
+	JMP fimMotor
+
+nMod2:
 	INC A
 	JMP fimMotor
 	
@@ -143,7 +182,7 @@ fimMotor:
 	MOV R0, A
 	MOV A, 22h
 	
-	ANL A, 0F0h
+	ANL A, #0F0h
 	
 	ORL A, R0
 	
@@ -155,8 +194,36 @@ fimMotor:
 	RET
 
 ; ======================================================================= ;	
-
-ORG 2500h
+meioseg:
+	MOV 2ch, R4
+	MOV 2dh, R5
+	MOV 2eh, R6
+	
+	;for(r4=255;r4!=0;r4--)
+	MOV R4, #255					;1
+lp1:
+		;for(r5=245;r5!=0;r5--)
+		MOV R5, #245				;255*1
+	lp2:
+			;for(r6=6;r6!=0;r6--)
+			MOV R6, #6  		   	;255*245*1
+		lp3:
+			DJNZ R6,lp3				;255*245*6*2
+			NOP						;255*245
+			;endfor
+		DJNZ R5,lp2					;255*245*2
+		;endfor
+	DJNZ R4,lp1						;255*2
+	;endfor
+	
+	
+	MOV R6, 2eh
+	MOV R5, 2dh
+	MOV R4, 2ch
+	
+	RET
+	
+ORG 3500h
 	mensagem:
 	
 END
