@@ -8,7 +8,9 @@
 	22.0 ~ 22.3	estado motor
 	22.4            enable motor
 	22.5		sentido rotacao motor (1 = horario)
+	22.6		flag nova volta
 23	Ciclos do motor
+24	Voltas do motor
 2a   ~ 2f       salva alguns registradores (para funcoes)
 	2e~2f		para interrupções
 	

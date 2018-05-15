@@ -20,6 +20,7 @@ tec_B3 EQU P3.6
 LED1 EQU P3.6
 LED2 EQU P3.7
 LED3 EQU P1.4
+SW1 EQU P3.2   
 	
 MOTOR1 EQU P2.0
 MOTOR2 EQU P2.2
@@ -35,6 +36,11 @@ dado  EQU		P0
 ORG 0000h
 SJMP main
 
+ORG 0003h
+	;CALL sw1Inter
+	JMP main
+	RETI
+
 ORG 000Bh
 	CALL timerInter
 	RETI
@@ -44,113 +50,237 @@ main:
 	;set time
 	SETB ET0
 	MOV TMOD, #01h
-	MOV TH0, #80h
+	MOV TH0, #0F0h
 	MOV TL0, #00h
+	SETB TR0
+	
+	;set interrupcao externa
+	SETB EX0 ;Enable 
+	;SETB IE0
+	CLR IT0 ;  seleção de interrupção externa por borda (1) ou por nível (0).
+	
+	;init
 	SETB EA
-	;SETB TR0
-	
-	;enable motor
-	;SETB 0x22.4
-	
-	
 	call clearRAM
+	SETB LED2
     CALL inidisp
+	;desliga motor
+	CLR 0x22.4
 	
+	;R6 = num voltas
 	CALL le_n_voltas
 	
-	JMP $
+	;R4: 0 anti / 1 horario
+	CALL le_sentido
 
-;================================
-; retorna em r4 numero de voltas
-; usa R4, A, B
+	;enable motor
+	SETB 0x22.4
+	
+	MOV A, R6
+	MOV R4, A
+	
+loop_main:	
+	CLR 0x22.6
+	;==> print n voltas
+	CALL clearLCD
+	MOV dptr, #mensagemNvoltas
+	CALL writeMsg
+	;printa o valor de R4
+	CALL print_num_3dig
+	
+	DEC R4
+	CJNE R4, #0FFh, nao_mudou_ram
+	
+	JMP final_main
+	
+nao_mudou_ram:
+
+	JB 0x22.6, loop_main
+	JMP nao_mudou_ram
+
+
+final_main:
+	;enable motor
+	CLR 0x22.4
+	
+	;mostra mensagem FIM
+	CALL clearLCD
+	MOV dptr, #mensagemFIM
+	CALL writeMsg
+	
+lp_final_main:
+	;pisca led
+	CLR LED2
+	CALL meioseg
+	SETB LED2
+	CALL meioseg
+	
+	JMP lp_final_main
+		
+; ======================================================================= ;	
+; LE SENTIDO DE ROTAÇÃO
+; retorna em RAM(22.5) e r4
+; 0 anti / 1 horario
+le_sentido:
+
+	CALL clearLCD
+	MOV dptr, #mensagemSentido
+	CALL writeMsg
+	
+	CALL nextLine
+	
+	MOV dptr, #mensagemSentido2
+	CALL writeMsg
+	
+caractere_invalido:	
+	;R4 <- botao
+	CALL click_tcl
+	
+	CJNE R4, #00h,pode_ser_um
+	CLR 0x22.5
+	RET
+pode_ser_um:
+	CJNE R4, #01h,caractere_invalido
+	SETB 0x22.5
+	RET
+
+
+; ======================================================================= ;	
+; LE NUMERO DE VOLTAS
+; retorna em R6 numero de voltas
+; usa R4, R7, A, B
 le_n_voltas:
-
+	
+	MOV R7, #00h
+	MOV R6, #00h
 	MOV A, #00h
-
+	CALL clearLCD
+	
+	MOV dptr, #mensagemVolta
+	CALL writeMsg
+	CALL nextLine
+	MOV dptr, #mensagemVolta2
+	CALL writeMsg
+	
 le_n_voltas2:
-	call clearLCD
-	MOV R0, A
-	CALL save_one_numb
+	
+	;MOV R0, A
+	;CALL save_one_numb
 	
 	;R4 <- botao
-	CALL click_tcl 
+	CALL click_tcl
 	
 	;if (R4==ENTER)
 	CJNE R4, #0Bh, not_enter ;11
-		MOV R4, A
-		RET
-
+	; verif enter sem nd em voltas
+	;MOV R4, A
+	CJNE R6, #01h, limpaLCD
+	CLR LED3
+	RET
+	
+	
+limpaLCD:
+	SETB LED3
+	CALL clearLCD
+	RET
+	
 not_enter:
+	;if 1 click = unidade
+	CJNE R7, #00h, segDigito
+	
+	MOV A, R4 ; Passa o valor da tecla para acc
+	MOV R6, A 
+	ADD A, #30h ; 0011000b + 0000xxxxb Para escrever digitos no display
+	
+	; Escreve primeiro digito
+	MOV dado, A
+	CALL dadodisp
+	
+	INC R7
+	JMP le_n_voltas2
+	
+	;else if 2 clicks = dez.uni
+segDigito:
+	CJNE R7, #01h, terDigito
+	
+	MOV A, R4 ; Passa o valor da tecla para acc
+	ADD A, #30h ; 0011000b + 0000xxxxb Para escrever digitos no display
+	
+	; Escreve segundo digito
+	MOV dado, A
+	CALL dadodisp
+	
+	MOV A, R6
 	MOV B, #0Ah
 	MUL AB
 	ADD A, R4
+	MOV R6, A
+	
+	INC R7
+	
+	JMP le_n_voltas2
+	
+	;else if 3 clicks = cent.dez.uni
+terDigito:
+	CJNE R7, #02h, le_n_voltas2
+	MOV A, R4 ; Passa o valor da tecla para acc
+	ADD A, #30h ; 0011000b + 0000xxxxb Para escrever digitos no display
+	
+	; Escreve terceiro digito
+	MOV dado, A
+	CALL dadodisp
+	
+	MOV A, R6
+	MOV B, #0Ah
+	MUL AB
+	ADD A, R4
+	MOV R6, A
+	
+	INC R7
 	JMP le_n_voltas2
 
 
-;============================================
-; sava R0 numero em decimal na memoria
-; na regiao apontada por dprt
-; usa A,B, R0
 
-save_one_numb:
-	MOV A, R0
-	MOV R3, A
-	MOV A, #09h
-	SUBB A, R0
+
+; ======================================================================= ;	
+; printa o valor de r4 nos display
+; sempre mostra 3 digitos
+; usa A,B, R4
+
+print_num_3dig:
+	;primeiro digito
+	MOV A, R4
+	MOV B, #64h
+	DIV AB
+	ADD A, #30h
+	MOV dado, A
+	call dadodisp
 	
-	;se der carry
-	JC more_than_ten
-		;r0<10
-		;primeiro digito
-		MOV A, #30h ;00110000b = 30h = '0' ascii
-		;;
-		MOV dado, A
-		
-		call dadodisp
-		
-		INC dptr
-		
-		;segundo digito
-		MOV A, R3
-		ADD A, #30h ;00110000b = 30h
-		;;
-		MOV dado, A
-		call dadodisp
-		
-		INC dptr
-		RET
-		
-more_than_ten:
-		;r0>=10
-		;primeiro digito
-		MOV A, R0
-		MOV B, #0Ah
-		DIV AB   ; A = A/B, B = A%B 
-		ADD A, #30h ;00110000b = 30h
-		;;
-		MOV dado, A
-		call dadodisp
-		
-		INC dptr
-		
-		;segundo digito
-		MOV A, B
-		ADD A, #30h ;00110000b = 30h = '0' ascii
-		;;
-		MOV dado, A
-		call dadodisp
+	;segundo digito
+	MOV A, B
+	MOV B, #0Ah
+	DIV AB
+	ADD A, #30h
+	MOV dado, A
+	call dadodisp
 	
-		INC dptr
-		RET
+	;terceiro digito
+	MOV A, B
+	ADD A, #30h
+	MOV dado, A
+	call dadodisp
+	
+	RET
 		
 
 ; ======================================================================= ;	
 ; Interrupção MoTOR
 ; 
 timerInter:
-
+	JB 0x22.4,girarMotor
+	RET
 girarMotor:
-	CLR LED2
+
 	; Salva registradores
 	MOV 2fh, A
 	MOV 2eh, R0
@@ -167,9 +297,7 @@ girarMotor:
 	CLR MOTOR4
 	JMP fimInter
 	
-else1:
-	SETB LED1
-	
+else1:	
 	CJNE A, #01h, else2
 	SETB MOTOR1
 	SETB MOTOR2
@@ -193,9 +321,7 @@ else3:
 	CLR MOTOR4
 	JMP fimInter
 	
-else4:
-	CLR LED1
-	
+else4:	
 	CJNE A, #04h, else5
 	CLR MOTOR1
 	CLR MOTOR2
@@ -270,26 +396,22 @@ fimMotor:
 	
 	MOV 22h, A
 	
+	;salva numero de voltas
+	MOV A, 23h
+	CJNE A, #0Ch, nao_foi_uma_volta
+	MOV A, 24h
+	INC A
+	MOV 24h, A
+	SETB 0x22.6
+	MOV 23h, #00h
+	
+nao_foi_uma_volta:
+	;recarrega registradores
 	MOV A, 2fh
 	MOV R0, 2eh
 	
 	RET
 
-;===============================================
-; rele disparado por 3 segundos
-rele:
-	SETB LED3
-	;3 seg
-	CALL meioseg
-	CALL meioseg
-	CALL meioseg
-	CALL meioseg
-	CALL meioseg
-	CALL meioseg
-	
-	CLR LED3
-	RET
-	
 
 ;================================
 ;=========== TECLADO ============
@@ -876,12 +998,13 @@ clearRAM:
 ; ======================================================================= ;
 
 
- org 2500h
-mensagem:  DB 'Tabuada',0 
-msgEquipe:  DB 'Gabriel Gustavo',0 
-waitMsg1: DB 'Pressione uma', 0
-waitMsg2: DB 'tecla ...', 0
-tabMsg: DB 'Tabuada do ', 0
+ org 0500h
+mensagemVolta:  DB 'Numero de Voltas',0 
+mensagemVolta2:  DB '(1-255):',0 
+mensagemSentido:  DB '0 - Anti horario',0 
+mensagemSentido2: DB '1 - Horario',0 	
+mensagemNvoltas:  DB 'Num Voltas: ',0 
+mensagemFIM:  DB 'FIM!',0 
 
 
 delay:      mov 2bh, r0
@@ -908,5 +1031,6 @@ loop2:		mov r1, #0FFH
 			mov r0, 2bh
 			mov r1, 2ch
 			ret
-			   
+			
+
 END

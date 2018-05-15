@@ -12,10 +12,10 @@
 SW1 EQU P3.2   
 LED1 EQU P1.4
 
-ORG 2000h
+ORG 0000h
 SJMP main
 	
-ORG 2003h
+ORG 0003h
 ;CLR EA
 CALL sw1Inter
 RETI
@@ -34,10 +34,10 @@ main:
 sw1Inter:
 	JC cc
 	CLR LED1
-	CLR C
+	SETB C
 	RET
 cc:
 	SETB LED1
-	SETB C
+	CLR C
 	RET
 END
