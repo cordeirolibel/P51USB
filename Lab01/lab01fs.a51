@@ -75,13 +75,16 @@ main:
 
 	;init
 	SETB EA
-
 	call clearRAM
 	SETB LED3
     CALL inidisp
-	;desliga motor
-	;CLR 0x22.4
 	
+	;set motor
+	SETB MOTOR1
+	CLR MOTOR2
+	CLR MOTOR3
+	CLR MOTOR4
+	JMP teste
 	;R6 = num voltas
 	CALL le_n_voltas
 	
@@ -90,7 +93,8 @@ main:
 	
 	;velocidade: 0-50%, 1-100%
 	CALL le_velocidade
-
+	teste:
+	mov r6,#08h
 	;enable motor
 	SETB ET0
 	
@@ -210,6 +214,10 @@ caractere_invalido:
 	
 	CJNE R4, #00h,pode_ser_um
 	CLR 0x22.5
+	MOV A, 0x22
+	ANL A, #0F0h
+	ORL A, #07h
+	MOV 0x22, A
 	RET
 pode_ser_um:
 	CJNE R4, #01h,caractere_invalido
@@ -241,6 +249,10 @@ le_n_voltas2:
 	;R4 <- botao
 	CALL click_tcl
 	
+	CJNE R4, #0Ah, notClr
+	JMP le_n_voltas
+	
+notClr:
 	;if (R4==ENTER)
 	CJNE R4, #0Bh, not_enter ;11
 	; verif enter sem nd em voltas
@@ -372,7 +384,7 @@ girarMotor:
 	
 else1:	
 	CJNE A, #01h, else2
-	SETB MOTOR1
+	CLR MOTOR1
 	SETB MOTOR2
 	CLR MOTOR3
 	CLR MOTOR4
@@ -381,46 +393,46 @@ else1:
 else2:
 	CJNE A, #02h, else3
 	CLR MOTOR1
-	SETB MOTOR2
-	CLR MOTOR3
+	CLR MOTOR2
+	SETB MOTOR3
 	CLR MOTOR4
 	JMP fimInter
 	
 else3:
 	CJNE A, #03h, else4
 	CLR MOTOR1
-	SETB MOTOR2
-	SETB MOTOR3
-	CLR MOTOR4
+	CLR MOTOR2
+	CLR MOTOR3
+	SETB MOTOR4
 	JMP fimInter
 	
 else4:	
 	CJNE A, #04h, else5
-	CLR MOTOR1
+	SETB MOTOR1
 	CLR MOTOR2
-	SETB MOTOR3
+	CLR MOTOR3
 	CLR MOTOR4
 	JMP fimInter
 	
 else5:
 	CJNE A, #05h, else6
 	CLR MOTOR1
-	CLR MOTOR2
-	SETB MOTOR3
-	SETB MOTOR4
+	SETB MOTOR2
+	CLR MOTOR3
+	CLR MOTOR4
 	JMP fimInter
 	
 else6:
 	CJNE A, #06h, else7
 	CLR MOTOR1
 	CLR MOTOR2
-	CLR MOTOR3
-	SETB MOTOR4
+	SETB MOTOR3
+	CLR MOTOR4
 	JMP fimInter
 	
 else7:
 	CJNE A, #07h, else8
-	SETB MOTOR1
+	CLR MOTOR1
 	CLR MOTOR2
 	CLR MOTOR3
 	SETB MOTOR4
@@ -471,7 +483,7 @@ fimMotor:
 	
 	;salva numero de voltas
 	MOV A, 23h
-	CJNE A, #0Ch, nao_foi_uma_volta
+	CJNE A, #06h, nao_foi_uma_volta
 	MOV A, 24h
 	INC A
 	MOV 24h, A
