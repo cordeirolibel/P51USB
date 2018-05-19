@@ -27,6 +27,7 @@ MOTOR2 EQU P2.1
 	
 PWM_FLAG EQU 0 ; Indica high/low
 
+
 	
 ; Display
 en    EQU     	P2.7   ;P3.5 enable display
@@ -40,6 +41,7 @@ SJMP main
 main:
 	CALL clearRAM
     CALL inidisp
+	CALL clearLCD
 	
 	; Escreve msg inicial
 	mov dptr, #msgParado
@@ -53,20 +55,27 @@ main:
 	CALL writeMsg
 	
 	CALL le_velocidade
-	
-	JMP main
+
+loopMain:
+	JMP loopMain
 	
 
 ; ======================================================================= ;
 ; PWM setup
 ; Usa R7
-pwm_setup:
+PWM_SETUP:
 	MOV TMOD,#00H
-	MOV R7, #0A0h ; 0 = 0V e 255 = 5V - PWM width
+	;MOV R7, #0FFh; 0 = 0V e 255 = 5V - PWM width
 	
 	SETB EA ; Enable interrup
 	SETB ET0 ; Enable Timer 0 interrup
 	SETB TR0 ; Start Timer
+	RET
+	
+; ======================================================================= ;
+; Para pwm
+PWM_STOP:
+	CLR TR0
 	RET
 
 ; ======================================================================= ;
@@ -76,7 +85,10 @@ TIMER_0_INTERRUP:
 	
 fimLow:
 	SETB PWM_FLAG
-	SETB MOTOR1	
+	SETB MOTOR1
+	
+	SETB LED3
+	
 	MOV TH0, R7		
 	
 	CLR TF0			; Clear timer flag
@@ -85,6 +97,9 @@ fimLow:
 fimHigh:
 	CLR PWM_FLAG
 	CLR MOTOR1
+	
+	CLR LED3
+	
 	MOV A, #0FFh
 	CLR C			; Clear carry pra não afetar conta
 	
@@ -102,6 +117,7 @@ le_velocidade:
 		CALL click_tcl
 	
 		CJNE R4, #00h, else1
+		CALL PWM_STOP
 		RET
 		
 	else1:
@@ -118,8 +134,17 @@ le_velocidade:
 		MOV dptr, #msgSentido
 		CALL writeMsg
 		
-		MOV dptr, #msgVel1
 		CALL le_sentido
+		
+		CALL nextLine
+		
+		; Escreve msg vel1
+		MOV dptr, #msgVel1
+		CALL writeMsg
+		
+		MOV R7, #033h	; velocidade 51 = 20%
+		CALL PWM_SETUP
+		RET
 		
 	else2:
 		CJNE R4, #02h, else3
@@ -134,13 +159,24 @@ le_velocidade:
 		
 		MOV dptr, #msgSentido
 		CALL writeMsg
-	
-		MOV dptr, #msgVel2
+
 		CALL le_sentido
+		
+		CALL nextLine
+		
+		; Escreve msg vel2
+		MOV dptr, #msgVel2
+		CALL writeMsg
+		
+		MOV R7, #066h	; velocidade 102 = 40%
+		CALL PWM_SETUP
+		
+		RET
 
 	else3:
 		CJNE R4, #03h, else4
 		; Set vel 60%
+		
 		CALL clearLCD
 		
 		; Escreve msg vel3
@@ -152,12 +188,23 @@ le_velocidade:
 		MOV dptr, #msgSentido
 		CALL writeMsg
 
-		MOV dptr, #msgVel3
 		CALL le_sentido
+		
+		CALL nextLine
+		
+		; Escreve msg vel3
+		MOV dptr, #msgVel3
+		CALL writeMsg
+		
+		MOV R7, #099h	; velocidade 153 = 60%
+		CALL PWM_SETUP
+		
+		RET
 	
 	else4:
 		CJNE R4, #04h, else5
 		; Set vel 80%
+		
 		CALL clearLCD
 		
 		; Escreve msg vel4
@@ -169,12 +216,23 @@ le_velocidade:
 		MOV dptr, #msgSentido
 		CALL writeMsg
 		
-		MOV dptr, #msgVel4
 		CALL le_sentido
+		
+		CALL nextLine
+		
+		; Escreve msg vel4
+		MOV dptr, #msgVel4
+		CALL writeMsg
+		
+		MOV R7, #0CCh	; velocidade 204 = 80%
+		CALL PWM_SETUP
+		
+		RET
 	
 	else5:
 		CJNE R4, #05h, fim
 		; Set vel 100%
+		
 		CALL clearLCD
 		
 		; Escreve msg vel5
@@ -186,8 +244,18 @@ le_velocidade:
 		MOV dptr, #msgSentido
 		CALL writeMsg
 		
-		MOV dptr, #msgVel5
 		CALL le_sentido
+		
+		CALL nextLine
+		
+		; Escreve msg vel5
+		MOV dptr, #msgVel5
+		CALL writeMsg
+		
+		MOV R7, #0FFh	; velocidade 255 = 100%
+		CALL PWM_SETUP
+		
+		RET
 	
 	fim:
 		JMP le_velocidade
@@ -198,14 +266,10 @@ le_velocidade:
 le_sentido:
 	; Retorna tecla em R4
 	CALL click_tcl
-	
+
 	CJNE R4, #0Ah, antiHorario
-	; Escreve msg vel+horario
+	; Escreve msg horario
 	CALL clearLCD
-	CALL writeMsg ; Escreve msg de velocidade que estava em dptr
-	
-	CALL nextLine
-	
 	MOV dptr, #msgSentido2 ; Escreve sentido de rotação
 	CALL writeMsg
 	
@@ -215,10 +279,6 @@ antiHorario:
 	CJNE R4, #0Bh, le_sentido
 	; Escreve msg vel + antihorario
 	CALL clearLCD
-	CALL writeMsg ; Escreve msg de velocidade que estava em dptr
-	
-	CALL nextLine
-	
 	MOV dptr, #msgSentido1 ; Escreve sentido de rotação
 	CALL writeMsg
 	
@@ -782,10 +842,10 @@ lp1_ms:
 
 ORG 0500h
 msgParado:  DB 'Motor parado',0
-msgSentido: DB 'Set sentido...', 0
-msgSentido1: DB '# Anti Horario', 0
-msgSentido2: DB '* Horario', 0
-msgVel: DB 'Set vel...', 0
+msgSentido: DB 'Set sentido...',0
+msgSentido1: DB '# Anti Horario',0
+msgSentido2: DB '* Horario',0
+msgVel: DB 'Set vel...',0
 msgVel1: DB 'Velocidade 20%',0 
 msgVel2: DB 'Velocidade 40%',0 
 msgVel3: DB 'Velocidade 60%',0 	

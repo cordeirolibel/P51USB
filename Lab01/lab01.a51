@@ -43,6 +43,7 @@ ORG 0003h
 	RETI
 
 ORG 000Bh
+	
 	CALL timerInter
 	RETI
 	
@@ -82,8 +83,9 @@ main:
 	;desliga motor
 	;CLR 0x22.4
 	
-	mov r6, #00h
-	jmp teste
+	;mov r6, #01h
+	;setb 0x22.7
+	;jmp teste
 	
 	;R6 = num voltas
 	CALL le_n_voltas
@@ -91,10 +93,9 @@ main:
 	;RAM(22.5): 0 anti / 1 horario
 	CALL le_sentido
 	
-	;velocidade: 0-50%, 1-100%
+	;(RAM 22.7)velocidade: 0-50%, 1-100%
 	CALL le_velocidade
-	teste:
-	
+	;teste:
 	
 	MOV A, R6
 	MOV R4, A
@@ -110,15 +111,15 @@ loop_main:
 	;printa o valor de R4
 	CALL print_num_3dig
 	
-	;enable motor
-	SETB ET0
-	
 	DEC R4
 	CJNE R4, #0FFh, nao_mudou_ram
 	
 	JMP final_main
 	
 nao_mudou_ram:
+	;enable motor
+	SETB ET0
+	
 	JB 0x22.4, main
 	JB 0x22.6, loop_main
 	JMP nao_mudou_ram
@@ -165,7 +166,7 @@ apaga_led:
 	
 ; ======================================================================= ;	
 ; LE VELOCIDADE
-; retorna em RAM(22.5) e r4
+; retorna em RAM(22.7) e r4
 ; 0 %50 / 1 %100
 le_velocidade:
 
@@ -192,7 +193,7 @@ pode_ser_um2:
 	CJNE R4, #01h,caractere_invalido2
 	; 100%
 	SETB 0x22.7
-	MOV TH0, #80h
+	MOV TH0, #50h
 	MOV TL0, #00h
 	RET
 
@@ -489,7 +490,7 @@ nao_foi_uma_volta:
 	MOV TL0, #00h
 	JMP recReg
 velo1:
-	MOV TH0, #80h
+	MOV TH0, #50h
 	MOV TL0, #00h
 	
 recReg:
@@ -1120,7 +1121,7 @@ loop:			mov r1, #0FH
 delay2:     mov 2bh, r0
 			mov 2ch, r1
 
-			mov r0,#07FH
+			mov r0,#05FH
 loop2:		mov r1, #0FFH
 				djnz r1,$
 			   djnz r0, loop2
