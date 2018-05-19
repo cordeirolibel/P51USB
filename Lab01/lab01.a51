@@ -5,7 +5,7 @@
 ;========================================================
 ;
 ;CSW40 - Sistemas Microcontrolados
-;LABORATÓRIO 01 - MEIO PASSO
+;LABORATÓRIO 02 - MEIO PASSO
 
 #include "at89c5131.h"
 ; Pinos Teclado
