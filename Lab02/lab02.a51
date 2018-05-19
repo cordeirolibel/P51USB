@@ -22,10 +22,11 @@ LED2 EQU P3.7
 LED3 EQU P1.4
 SW1 EQU P3.2   
 	
-MOTOR4 EQU P2.0
-MOTOR3 EQU P2.2
+MOTOR1 EQU P2.0
 MOTOR2 EQU P2.1
-MOTOR1 EQU P2.3
+	
+PWM_FLAG EQU 0 ; Indica high/low
+
 	
 ; Display
 en    EQU     	P2.7   ;P3.5 enable display
@@ -57,6 +58,43 @@ main:
 	
 
 ; ======================================================================= ;
+; PWM setup
+; Usa R7
+pwm_setup:
+	MOV TMOD,#00H
+	MOV R7, #0A0h ; 0 = 0V e 255 = 5V - PWM width
+	
+	SETB EA ; Enable interrup
+	SETB ET0 ; Enable Timer 0 interrup
+	SETB TR0 ; Start Timer
+	RET
+
+; ======================================================================= ;
+;
+TIMER_0_INTERRUP:
+	JB PWM_FLAG, fimHigh ; Escolhe rotina de pulso alto ou baixo
+	
+fimLow:
+	SETB PWM_FLAG
+	SETB MOTOR1	
+	MOV TH0, R7		
+	
+	CLR TF0			; Clear timer flag
+	RETI
+	
+fimHigh:
+	CLR PWM_FLAG
+	CLR MOTOR1
+	MOV A, #0FFh
+	CLR C			; Clear carry pra não afetar conta
+	
+	SUBB A, R7		; A = 255 - R7.
+	MOV TH0, A
+	
+	CLR TF0			; Clear the Timer 0 interrupt flag
+	RETI
+
+; ======================================================================= ;
 ; Le velocidade
 ; Usa R4
 le_velocidade:
@@ -79,7 +117,8 @@ le_velocidade:
 		
 		MOV dptr, #msgSentido
 		CALL writeMsg
-
+		
+		MOV dptr, #msgVel1
 		CALL le_sentido
 		
 	else2:
@@ -95,7 +134,8 @@ le_velocidade:
 		
 		MOV dptr, #msgSentido
 		CALL writeMsg
-
+	
+		MOV dptr, #msgVel2
 		CALL le_sentido
 
 	else3:
@@ -112,6 +152,7 @@ le_velocidade:
 		MOV dptr, #msgSentido
 		CALL writeMsg
 
+		MOV dptr, #msgVel3
 		CALL le_sentido
 	
 	else4:
@@ -127,7 +168,8 @@ le_velocidade:
 		
 		MOV dptr, #msgSentido
 		CALL writeMsg
-
+		
+		MOV dptr, #msgVel4
 		CALL le_sentido
 	
 	else5:
@@ -143,7 +185,8 @@ le_velocidade:
 		
 		MOV dptr, #msgSentido
 		CALL writeMsg
-
+		
+		MOV dptr, #msgVel5
 		CALL le_sentido
 	
 	fim:
@@ -153,15 +196,33 @@ le_velocidade:
 ; LE SENTIDO DE ROTAÇÃO
 ; # ANTI / * HORARIO
 le_sentido:
-
 	; Retorna tecla em R4
 	CALL click_tcl
 	
 	CJNE R4, #0Ah, antiHorario
-	; Escreve msg vel+antiHorario
+	; Escreve msg vel+horario
+	CALL clearLCD
+	CALL writeMsg ; Escreve msg de velocidade que estava em dptr
+	
+	CALL nextLine
+	
+	MOV dptr, #msgSentido2 ; Escreve sentido de rotação
+	CALL writeMsg
+	
+	RET
 	
 antiHorario:
 	CJNE R4, #0Bh, le_sentido
+	; Escreve msg vel + antihorario
+	CALL clearLCD
+	CALL writeMsg ; Escreve msg de velocidade que estava em dptr
+	
+	CALL nextLine
+	
+	MOV dptr, #msgSentido1 ; Escreve sentido de rotação
+	CALL writeMsg
+	
+	RET
 	
 
 ; ======================================================================= ;
@@ -722,11 +783,39 @@ lp1_ms:
 ORG 0500h
 msgParado:  DB 'Motor parado',0
 msgSentido: DB 'Set sentido...', 0
+msgSentido1: DB '# Anti Horario', 0
+msgSentido2: DB '* Horario', 0
 msgVel: DB 'Set vel...', 0
 msgVel1: DB 'Velocidade 20%',0 
 msgVel2: DB 'Velocidade 40%',0 
 msgVel3: DB 'Velocidade 60%',0 	
 msgVel4: DB 'Velocidade 80%',0 
 msgVel5: DB 'Velocidade 100%',0 	
+
+delay:      mov 2bh, r0
+			mov 2ch, r1
+			
+			mov r0,#0FH
+loop:			mov r1, #0FH
+				djnz r1,$
+			djnz r0, loop
+			
+			mov r0, 2bh
+			mov r1, 2ch
+			
+			ret
+			
+delay2:     mov 2bh, r0
+			mov 2ch, r1
+
+			mov r0,#07FH
+loop2:		mov r1, #0FFH
+				djnz r1,$
+			   djnz r0, loop2
+			
+			mov r0, 2bh
+			mov r1, 2ch
+			ret
+			
 
 END
