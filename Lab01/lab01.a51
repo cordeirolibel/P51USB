@@ -82,6 +82,9 @@ main:
 	;desliga motor
 	;CLR 0x22.4
 	
+	mov r6, #00h
+	jmp teste
+	
 	;R6 = num voltas
 	CALL le_n_voltas
 	
@@ -90,9 +93,8 @@ main:
 	
 	;velocidade: 0-50%, 1-100%
 	CALL le_velocidade
-
-	;enable motor
-	SETB ET0
+	teste:
+	
 	
 	MOV A, R6
 	MOV R4, A
@@ -104,8 +106,12 @@ loop_main:
 	CALL clearLCD
 	MOV dptr, #mensagemNvoltas
 	CALL writeMsg
+	
 	;printa o valor de R4
 	CALL print_num_3dig
+	
+	;enable motor
+	SETB ET0
 	
 	DEC R4
 	CJNE R4, #0FFh, nao_mudou_ram
@@ -368,7 +374,6 @@ girarMotor:
 	CLR MOTOR2
 	CLR MOTOR3
 	CLR MOTOR4
-	JMP fimInter
 	
 else1:	
 	CJNE A, #01h, else2
