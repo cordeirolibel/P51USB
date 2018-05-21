@@ -27,7 +27,6 @@ MOTOR2 EQU P2.1
 	
 PWM_FLAG EQU 0 ; Indica high/low
 
-
 	
 ; Display
 en    EQU     	P2.7   ;P3.5 enable display
@@ -44,8 +43,9 @@ ORG 000Bh
 	RETI
 
 main:
+	CLR MOTOR1
+	CLR MOTOR2
 	CLR LED3
-	
 
 	CALL clearRAM
     CALL inidisp
@@ -62,16 +62,13 @@ main:
 	mov dptr, #msgVel
 	CALL writeMsg
 	
-	
-	CALL le_velocidade
-	
-	SETB LED3
-	
+	MOV R7, #00h
 	CALL PWM_SETUP
 
 loopMain:
+	CALL le_velocidade
 	JMP loopMain
-	
+
 
 ; ======================================================================= ;
 ; PWM setup
@@ -112,18 +109,29 @@ TIMER_0_INTERRUP:
 	
 fimLow:
 	SETB PWM_FLAG
-	;SETB MOTOR1
+	CLR MOTOR1
+	CLR MOTOR2
 	
 	SETB LED3
 	
 	MOV TH0, R7		
 	
 	CLR TF0			; Clear timer flag
-	RETI
+	RET
 	
 fimHigh:
+
+	JB 0x22.5, giraHorario
+	SETB MOTOR1
+	CLR MOTOR2
+	JMP continuaHigh
+
+giraHorario:
+	CLR MOTOR1
+	SETB MOTOR2
+
+continuaHigh:
 	CLR PWM_FLAG
-	;CLR MOTOR1
 	
 	CLR LED3
 	
@@ -134,7 +142,7 @@ fimHigh:
 	MOV TH0, A
 	
 	CLR TF0			; Clear the Timer 0 interrupt flag
-	RETI
+	RET
 
 ; ======================================================================= ;
 ; Le velocidade
@@ -145,7 +153,11 @@ le_velocidade:
 	
 		CJNE R4, #00h, else1
 		CALL PWM_STOP
-		RET
+		
+		mov dptr, #msgParado
+		CALL writeMsg
+		
+		JMP fim_interrup
 		
 	else1:
 		CJNE R4, #01h, else2
@@ -156,22 +168,20 @@ le_velocidade:
 		MOV dptr, #msgVel1
 		CALL writeMsg
 		
-		CALL nextLine
-		
-		MOV dptr, #msgSentido
-		CALL writeMsg
-		
-		CALL le_sentido
-		
-		CALL nextLine
+		;CALL nextLine
+		;MOV dptr, #msgSentido
+		;CALL writeMsg
+		;CALL le_sentido
+		;CALL nextLine
 		
 		; Escreve msg vel1
-		MOV dptr, #msgVel1
-		CALL writeMsg
+		;MOV dptr, #msgVel1
+		;CALL writeMsg
 		
 		MOV R7, #033h	; velocidade 51 = 20%
 		;CALL PWM_SETUP
-		RET
+		
+		JMP fim_interrup
 		
 	else2:
 		CJNE R4, #02h, else3
@@ -182,23 +192,10 @@ le_velocidade:
 		MOV dptr, #msgVel2
 		CALL writeMsg
 		
-		CALL nextLine
-		
-		MOV dptr, #msgSentido
-		CALL writeMsg
-
-		CALL le_sentido
-		
-		CALL nextLine
-		
-		; Escreve msg vel2
-		MOV dptr, #msgVel2
-		CALL writeMsg
-		
 		MOV R7, #066h	; velocidade 102 = 40%
 		;CALL PWM_SETUP
 		
-		RET
+		JMP fim_interrup
 
 	else3:
 		CJNE R4, #03h, else4
@@ -210,23 +207,10 @@ le_velocidade:
 		MOV dptr, #msgVel3
 		CALL writeMsg
 		
-		CALL nextLine
-		
-		MOV dptr, #msgSentido
-		CALL writeMsg
-
-		CALL le_sentido
-		
-		CALL nextLine
-		
-		; Escreve msg vel3
-		MOV dptr, #msgVel3
-		CALL writeMsg
-		
 		MOV R7, #099h	; velocidade 153 = 60%
 		;CALL PWM_SETUP
 		
-		RET
+		JMP fim_interrup
 	
 	else4:
 		CJNE R4, #04h, else5
@@ -237,27 +221,14 @@ le_velocidade:
 		; Escreve msg vel4
 		MOV dptr, #msgVel4
 		CALL writeMsg
-		
-		CALL nextLine
-		
-		MOV dptr, #msgSentido
-		CALL writeMsg
-		
-		CALL le_sentido
-		
-		CALL nextLine
-		
-		; Escreve msg vel4
-		MOV dptr, #msgVel4
-		CALL writeMsg
-		
+
 		MOV R7, #0CCh	; velocidade 204 = 80%
 		;CALL PWM_SETUP
 		
-		RET
+		JMP fim_interrup
 	
 	else5:
-		CJNE R4, #05h, fim
+		CJNE R4, #05h, else6
 		; Set vel 100%
 		
 		CALL clearLCD
@@ -266,26 +237,36 @@ le_velocidade:
 		MOV dptr, #msgVel5
 		CALL writeMsg
 		
-		CALL nextLine
-		
-		MOV dptr, #msgSentido
-		CALL writeMsg
-		
-		CALL le_sentido
-		
-		CALL nextLine
-		
-		; Escreve msg vel5
-		MOV dptr, #msgVel5
-		CALL writeMsg
-		
 		MOV R7, #0FFh	; velocidade 255 = 100%
 		;CALL PWM_SETUP
 		
-		RET
+		JMP fim_interrup
+		
+	else6:
+		CJNE R4, #0Bh, else7
+		CLR 0x22.5
+		
+		JMP fim_interrup
+		
+	else7:
+		CJNE R4, #0Ah, fim_interrup
+		SETB 0x22.5
+		
+		JMP fim_interrup
 	
-	fim:
-		JMP le_velocidade
+	fim_interrup:
+		JB 0x22.5, printSentido
+		CALL nextLine
+		MOV dptr, #msgSentido1
+		CALL writeMsg
+		RET
+		
+printSentido:
+		CALL nextLine
+		MOV dptr, #msgSentido2
+		CALL writeMsg
+	
+		RET
 	
 ; ======================================================================= ;	
 ; LE SENTIDO DE ROTAÇÃO
@@ -296,6 +277,7 @@ le_sentido:
 
 	CJNE R4, #0Ah, antiHorario
 	; Escreve msg horario
+	SETB 0x22.5
 	CALL clearLCD
 	MOV dptr, #msgSentido2 ; Escreve sentido de rotação
 	CALL writeMsg
@@ -305,6 +287,7 @@ le_sentido:
 antiHorario:
 	CJNE R4, #0Bh, le_sentido
 	; Escreve msg vel + antihorario
+	CLR 0x22.5
 	CALL clearLCD
 	MOV dptr, #msgSentido1 ; Escreve sentido de rotação
 	CALL writeMsg

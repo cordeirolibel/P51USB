@@ -46,7 +46,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\Objects\</OutputDirectory>
-          <OutputName>lab01</OutputName>
+          <OutputName>lab01fs</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -365,9 +365,9 @@
           <GroupName>Source Group 1</GroupName>
           <Files>
             <File>
-              <FileName>lab01.a51</FileName>
+              <FileName>lab01fs.a51</FileName>
               <FileType>2</FileType>
-              <FilePath>.\lab01.a51</FilePath>
+              <FilePath>.\lab01fs.a51</FilePath>
             </File>
           </Files>
         </Group>

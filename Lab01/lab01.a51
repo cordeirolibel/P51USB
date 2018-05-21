@@ -217,17 +217,34 @@ caractere_invalido:
 	
 	CJNE R4, #00h,pode_ser_um
 	CLR 0x22.5
+	;ESTADO 7
+	CLR 0x22.0
+	SETB 0x22.1
+	SETB 0x22.2
+	SETB 0x22.3
 	RET
 pode_ser_um:
 	CJNE R4, #01h,caractere_invalido
 	SETB 0x22.5
+	; ESTADO 0
+	CLR 0x22.0
+	CLR 0x22.1
+	CLR 0x22.2
+	CLR 0x22.3
 	RET
 
 ; ======================================================================= ;	
 ; LE NUMERO DE VOLTAS
 ; retorna em R6 numero de voltas
 ; usa R4, R7, A, B
+
 le_n_voltas:
+	CALL le_n_voltas_reg
+	MOV A, R6
+	MOV 24h, A
+	RET
+
+le_n_voltas_reg:
 	
 	MOV R7, #00h
 	MOV R6, #00h
@@ -248,6 +265,10 @@ le_n_voltas2:
 	;R4 <- botao
 	CALL click_tcl
 	
+	CJNE R4, #0Ah, verifEnter
+	JMP le_n_voltas
+	
+verifEnter:
 	;if (R4==ENTER)
 	CJNE R4, #0Bh, not_enter ;11
 	; verif enter sem nd em voltas
@@ -479,10 +500,14 @@ fimMotor:
 	MOV A, 23h
 	CJNE A, #0Ch, nao_foi_uma_volta
 	MOV A, 24h
-	INC A
+	DEC A
 	MOV 24h, A
+	
 	SETB 0x22.6
 	MOV 23h, #00h
+	;Verifica parada do motor
+	CJNE A, #00h, nao_foi_uma_volta
+	RET
 	
 nao_foi_uma_volta:
 	JB 0x22.7, velo1

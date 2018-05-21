@@ -5,7 +5,7 @@
 ;========================================================
 ;
 ;CSW40 - Sistemas Microcontrolados
-;LABORATÓRIO 01 - MEIO PASSO
+;LABORATÓRIO 02 - MEIO PASSO
 
 #include "at89c5131.h"
 ; Pinos Teclado
@@ -43,6 +43,7 @@ ORG 0003h
 	RETI
 
 ORG 000Bh
+	
 	CALL timerInter
 	RETI
 	
@@ -75,28 +76,26 @@ main:
 
 	;init
 	SETB EA
+
 	call clearRAM
 	SETB LED3
     CALL inidisp
+	;desliga motor
+	;CLR 0x22.4
 	
-	;set motor
-	SETB MOTOR1
-	CLR MOTOR2
-	CLR MOTOR3
-	CLR MOTOR4
-	JMP teste
+	;mov r6, #01h
+	;setb 0x22.7
+	;jmp teste
+	
 	;R6 = num voltas
 	CALL le_n_voltas
 	
 	;RAM(22.5): 0 anti / 1 horario
 	CALL le_sentido
 	
-	;velocidade: 0-50%, 1-100%
+	;(RAM 22.7)velocidade: 0-50%, 1-100%
 	CALL le_velocidade
-	teste:
-	mov r6,#08h
-	;enable motor
-	SETB ET0
+	;teste:
 	
 	MOV A, R6
 	MOV R4, A
@@ -108,6 +107,7 @@ loop_main:
 	CALL clearLCD
 	MOV dptr, #mensagemNvoltas
 	CALL writeMsg
+	
 	;printa o valor de R4
 	CALL print_num_3dig
 	
@@ -117,6 +117,9 @@ loop_main:
 	JMP final_main
 	
 nao_mudou_ram:
+	;enable motor
+	SETB ET0
+	
 	JB 0x22.4, main
 	JB 0x22.6, loop_main
 	JMP nao_mudou_ram
@@ -163,7 +166,7 @@ apaga_led:
 	
 ; ======================================================================= ;	
 ; LE VELOCIDADE
-; retorna em RAM(22.5) e r4
+; retorna em RAM(22.7) e r4
 ; 0 %50 / 1 %100
 le_velocidade:
 
@@ -190,7 +193,7 @@ pode_ser_um2:
 	CJNE R4, #01h,caractere_invalido2
 	; 100%
 	SETB 0x22.7
-	MOV TH0, #80h
+	MOV TH0, #50h
 	MOV TL0, #00h
 	RET
 
@@ -214,21 +217,34 @@ caractere_invalido:
 	
 	CJNE R4, #00h,pode_ser_um
 	CLR 0x22.5
-	MOV A, 0x22
-	ANL A, #0F0h
-	ORL A, #07h
-	MOV 0x22, A
+	;ESTADO 7
+	CLR 0x22.0
+	SETB 0x22.1
+	SETB 0x22.2
+	SETB 0x22.3
 	RET
 pode_ser_um:
 	CJNE R4, #01h,caractere_invalido
 	SETB 0x22.5
+	; ESTADO 0
+	CLR 0x22.0
+	CLR 0x22.1
+	CLR 0x22.2
+	CLR 0x22.3
 	RET
 
 ; ======================================================================= ;	
 ; LE NUMERO DE VOLTAS
 ; retorna em R6 numero de voltas
 ; usa R4, R7, A, B
+
 le_n_voltas:
+	CALL le_n_voltas_reg
+	MOV A, R6
+	MOV 24h, A
+	RET
+
+le_n_voltas_reg:
 	
 	MOV R7, #00h
 	MOV R6, #00h
@@ -249,10 +265,10 @@ le_n_voltas2:
 	;R4 <- botao
 	CALL click_tcl
 	
-	CJNE R4, #0Ah, notClr
+	CJNE R4, #0Ah, verifEnter
 	JMP le_n_voltas
 	
-notClr:
+verifEnter:
 	;if (R4==ENTER)
 	CJNE R4, #0Bh, not_enter ;11
 	; verif enter sem nd em voltas
@@ -485,10 +501,14 @@ fimMotor:
 	MOV A, 23h
 	CJNE A, #06h, nao_foi_uma_volta
 	MOV A, 24h
-	INC A
+	DEC A
 	MOV 24h, A
+	
 	SETB 0x22.6
 	MOV 23h, #00h
+	;Verifica parada do motor
+	CJNE A, #00h, nao_foi_uma_volta
+	RET
 	
 nao_foi_uma_volta:
 	JB 0x22.7, velo1
@@ -496,7 +516,7 @@ nao_foi_uma_volta:
 	MOV TL0, #00h
 	JMP recReg
 velo1:
-	MOV TH0, #80h
+	MOV TH0, #50h
 	MOV TL0, #00h
 	
 recReg:
@@ -1127,7 +1147,7 @@ loop:			mov r1, #0FH
 delay2:     mov 2bh, r0
 			mov 2ch, r1
 
-			mov r0,#07FH
+			mov r0,#05FH
 loop2:		mov r1, #0FFH
 				djnz r1,$
 			   djnz r0, loop2

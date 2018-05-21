@@ -40,8 +40,70 @@
 ; 20.4 -> 4
 ; 20.5 -> 5
 ; 20.6 -> 6
-; 20.7 -> 7
-; 21.0 -> 8
-; 21.1 -> 9
-; 21.2 -> * (10)
-; 21.3 -> # (11)
+
+
+;===============================================================
+CJNE A, #00h, else1
+	SETB MOTOR1
+	CLR MOTOR2
+	CLR MOTOR3
+	CLR MOTOR4
+	JMP fimInter
+	
+else1:	
+	CJNE A, #01h, else2
+	CLR MOTOR1
+	SETB MOTOR2
+	CLR MOTOR3
+	CLR MOTOR4
+	JMP fimInter
+	
+else2:
+	CJNE A, #02h, else3
+	CLR MOTOR1
+	CLR MOTOR2
+	SETB MOTOR3
+	CLR MOTOR4
+	JMP fimInter
+	
+else3:
+	CJNE A, #03h, else4
+	CLR MOTOR1
+	CLR MOTOR2
+	CLR MOTOR3
+	SETB MOTOR4
+	JMP fimInter
+	
+else4:	
+	CJNE A, #04h, else5
+	SETB MOTOR1
+	CLR MOTOR2
+	CLR MOTOR3
+	CLR MOTOR4
+	JMP fimInter
+	
+else5:
+	CJNE A, #05h, else6
+	CLR MOTOR1
+	SETB MOTOR2
+	CLR MOTOR3
+	CLR MOTOR4
+	JMP fimInter
+	
+else6:
+	CJNE A, #06h, else7
+	CLR MOTOR1
+	CLR MOTOR2
+	SETB MOTOR3
+	CLR MOTOR4
+	JMP fimInter
+	
+else7:
+	CJNE A, #07h, else8
+	CLR MOTOR1
+	CLR MOTOR2
+	CLR MOTOR3
+	SETB MOTOR4
+	JMP fimInter
+	
+else8:
