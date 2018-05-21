@@ -38,7 +38,15 @@ dado  EQU		P0
 ORG 0000h
 SJMP main
 
+ORG 000Bh
+	
+	CALL TIMER_0_INTERRUP
+	RETI
+
 main:
+	CLR LED3
+	
+
 	CALL clearRAM
     CALL inidisp
 	CALL clearLCD
@@ -54,7 +62,12 @@ main:
 	mov dptr, #msgVel
 	CALL writeMsg
 	
+	
 	CALL le_velocidade
+	
+	SETB LED3
+	
+	CALL PWM_SETUP
 
 loopMain:
 	JMP loopMain
@@ -64,12 +77,26 @@ loopMain:
 ; PWM setup
 ; Usa R7
 PWM_SETUP:
-	MOV TMOD,#00H
+	;MOV TMOD,#01H
 	;MOV R7, #0FFh; 0 = 0V e 255 = 5V - PWM width
 	
-	SETB EA ; Enable interrup
-	SETB ET0 ; Enable Timer 0 interrup
-	SETB TR0 ; Start Timer
+	;set time
+	CLR ET0 ; desligado
+	MOV TMOD, #01h
+	;MOV TH0, R7
+	;MOV TL0, #99h
+	
+	;MOV TH0, #0F0h
+	;MOV TL0, #00h
+	SETB TR0
+	
+	;init
+	SETB EA
+	
+	;SETB EA ; Enable interrup
+	;CLR ET0 ; Enable Timer 0 interrup
+	SETB ET0
+	;SETB TR0 ; Start Timer
 	RET
 	
 ; ======================================================================= ;
@@ -85,7 +112,7 @@ TIMER_0_INTERRUP:
 	
 fimLow:
 	SETB PWM_FLAG
-	SETB MOTOR1
+	;SETB MOTOR1
 	
 	SETB LED3
 	
@@ -96,7 +123,7 @@ fimLow:
 	
 fimHigh:
 	CLR PWM_FLAG
-	CLR MOTOR1
+	;CLR MOTOR1
 	
 	CLR LED3
 	
@@ -143,7 +170,7 @@ le_velocidade:
 		CALL writeMsg
 		
 		MOV R7, #033h	; velocidade 51 = 20%
-		CALL PWM_SETUP
+		;CALL PWM_SETUP
 		RET
 		
 	else2:
@@ -169,7 +196,7 @@ le_velocidade:
 		CALL writeMsg
 		
 		MOV R7, #066h	; velocidade 102 = 40%
-		CALL PWM_SETUP
+		;CALL PWM_SETUP
 		
 		RET
 
@@ -197,7 +224,7 @@ le_velocidade:
 		CALL writeMsg
 		
 		MOV R7, #099h	; velocidade 153 = 60%
-		CALL PWM_SETUP
+		;CALL PWM_SETUP
 		
 		RET
 	
@@ -225,7 +252,7 @@ le_velocidade:
 		CALL writeMsg
 		
 		MOV R7, #0CCh	; velocidade 204 = 80%
-		CALL PWM_SETUP
+		;CALL PWM_SETUP
 		
 		RET
 	
@@ -253,7 +280,7 @@ le_velocidade:
 		CALL writeMsg
 		
 		MOV R7, #0FFh	; velocidade 255 = 100%
-		CALL PWM_SETUP
+		;CALL PWM_SETUP
 		
 		RET
 	
