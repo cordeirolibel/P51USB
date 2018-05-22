@@ -37,307 +37,175 @@ dado  EQU		P0
 ORG 0000h
 SJMP main
 
-ORG 000Bh
-	
-	CALL TIMER_0_INTERRUP
-	RETI
+;ORG 000Bh
+;	CALL TIMER_0_INTERRUP
+;	RETI
 
 main:
-	CLR MOTOR1
-	CLR MOTOR2
-	MOV R7, #00h
-
-
-	CALL clearRAM
-    CALL inidisp
-	CALL clearLCD
-
-
-	; Escreve msg inicial
-	mov dptr, #msgParado
-	CALL writeMsg
-	
-	; Pula linha
-	CALL nextLine
-
-	; Escreve msg set vel
-	mov dptr, #msgVel
-	CALL writeMsg
-	
-	;MOV R7, #00h
-	;CALL le_velocidade
-	;CALL PWM_SETUP
-
-	CALL PWM_SETUP
-	CALL le_velocidade
-	
-loopMain:
-	JMP loopMain
-
-
-; ======================================================================= ;
-; PWM setup
-; Usa R7
-PWM_SETUP:
-	;MOV TMOD,#01H
-	;MOV R7, #0FFh; 0 = 0V e 255 = 5V - PWM width
-	
 	;set time
 	CLR ET0 ; desligado
 	MOV TMOD, #01h
-	;MOV TH0, R7
-	;MOV TL0, #99h
-	
-	;MOV TH0, #0F0h
-	;MOV TL0, #00h
+	MOV TH0, #0F0h
+	MOV TL0, #00h
 	SETB TR0
 	
-	;init
-	SETB EA
-	
-	;CLR ET0 ; Enable Timer 0 interrup
-	SETB ET0
-	;SETB TR0 ; Start Timer
-	RET
-	
-; ======================================================================= ;
-; Para pwm
-PWM_STOP:
-	CLR TR0
-	;CLR ET0
-	RET
-
-; ======================================================================= ;
-;
-TIMER_0_INTERRUP:
-	CLR TR0
-	MOV 0x2E, A
-	JB PWM_FLAG, fimHigh ; Escolhe rotina de pulso alto ou baixo
-	
-fimLow:
-	SETB PWM_FLAG
 	CLR MOTOR1
 	CLR MOTOR2
 	
-	SETB LED3
+	CALL clearRAM
+    CALL inidisp
+	CALL clearLCD
 	
-	MOV TH0, R7
-	MOV TL0, R6
+	;Escreve msg inicial
+	mov dptr, #msgParado
+	CALL writeMsg
 	
-	CLR TF0			; Clear timer flag
-	MOV A, 0x2E
+loopMain:
+	CALL le_velocidade
+	JMP loopMain
 	
-	SETB TR0
-	RET
-	
-fimHigh:
-
-	JB 0x22.5, giraHorario
-	SETB MOTOR1
-	CLR MOTOR2
-	JMP continuaHigh
-
-giraHorario:
-	CLR MOTOR1
-	SETB MOTOR2
-
-continuaHigh:
-	CLR PWM_FLAG
-	
-	CLR LED3
-	
-	MOV A, #0FFh
-	CLR C			; Clear carry pra não afetar conta
-	
-	SUBB A, R7		; A = 255 - R7.
-	MOV TH0, A
-	
-	MOV A, #0FFh
-	CLR C
-	
-	SUBB A, R7
-	MOV TL0, A
-	
-	CLR TF0			; Clear the Timer 0 interrupt flag
-	MOV A, 0x2E
-	
-	SETB TR0
-	RET
-
 ; ======================================================================= ;
 ; Le velocidade
 ; Usa R4
 le_velocidade:
 		; Retorna tecla em R4
 		CALL click_tcl
-		CALL clearLCD
-
-falso_dig:
+		
 		CJNE R4, #00h, else1
-
-		MOV R7, #00h 
 		
-		;CALL PWM_STOP
+		CLR ET0
 		
-		mov dptr, #msgParado
-		CALL writeMsg
+		MOV R7, #00h	; velocidade 51 = 20%
+		MOV R6, #00h
 		
-		JMP fim_interrup
+		CLR MOTOR1
+		CLR MOTOR2
+		
+		JMP fim_leitura
 		
 	else1:
 		CJNE R4, #01h, else2
-		
+		; Set vel 20%
 		MOV R7, #033h	; velocidade 51 = 20%
 		MOV R6, #033h
-		; Set vel 20%
 		
-		; Escreve msg vel1
-		MOV dptr, #msgVel1
-		CALL writeMsg
+		SETB ET0
 		
-		JMP fim_interrup
+		JMP fim_leitura
 		
 	else2:
 		CJNE R4, #02h, else3
-		
+		; Set vel 40%
 		MOV R7, #066h	; velocidade 51 = 40%
 		MOV R6, #066h
-		; Set vel 40%
 		
+		SETB ET0
 		
-		; Escreve msg vel2
-		MOV dptr, #msgVel2
-		CALL writeMsg
+		JMP fim_leitura
 		
-		JMP fim_interrup
-
 	else3:
 		CJNE R4, #03h, else4
-		
+		; Set vel 60%
 		MOV R7, #099h	; velocidade 51 = 60%
 		MOV R6, #099h
-		; Set vel 60%
 		
+		SETB ET0
 		
-		
-		; Escreve msg vel3
-		MOV dptr, #msgVel3
-		CALL writeMsg
-		
-		
-		;CALL PWM_SETUP
-		
-		JMP fim_interrup
+		JMP fim_leitura
 	
 	else4:
 		CJNE R4, #04h, else5
-		MOV R7, #0CCh	; velocidade 51 = 20%
-		MOV R6, #0CCh	; velocidade 204 = 80%
 		; Set vel 80%
+		MOV R7, #0CCh
+		MOV R6, #0CCh
 		
-		; Escreve msg vel4
-		MOV dptr, #msgVel4
-		CALL writeMsg
-
+		SETB ET0
 		
-		;CALL PWM_SETUP
+		JMP fim_leitura
 		
-		JMP fim_interrup
-	
 	else5:
 		CJNE R4, #05h, else6
 		; velocidade 255 = 100%
-		CALL PWM_STOP
+		CLR ET0
+		
+		MOV R7, #0FFh
+		MOV R6, #0FFh
+		
+		JB 0x22.5, horario
+		; Set vel 100%
 		SETB MOTOR1
 		CLR MOTOR2
-		; Set vel 100%
 		
+		JMP fim_leitura
+		
+		horario:
+			CLR MOTOR1
+			SETB MOTOR2
 		
 		; Escreve msg vel5
 		MOV dptr, #msgVel5
 		CALL writeMsg
 		
-		
-		;CALL PWM_SETUP
-		
-		JMP fim_interrup
+		JMP fim_leitura
 		
 	else6:
-		CJNE R4, #0Bh, else7
+		CJNE R4, #0Ah, else7
 		CLR 0x22.5
-		
-		;CALL cria_falso_dig
-		JMP falso_dig
+		JMP fim_leitura
 		
 	else7:
-		CJNE R4, #0Ah, fim_interrup
+		CJNE R4, #0Bh, fim_leitura
 		SETB 0x22.5
 		
-		;CALL cria_falso_dig
-		JMP falso_dig
+	fim_leitura:
+		
+		; Limpa LCD
+		CALL clearLCD
+		
+	; Print uma velocidade
+		CJNE R7, #00h, print1
+		MOV dptr, #msgParado
+		CALL writeMSg
+		
+	print1:
+		CJNE R7, #033h, print2
+		MOV dptr, #msgVel1
+		CALL writeMSg
 	
-	fim_interrup:
-		JB 0x22.5, printSentido
+	print2:
+		CJNE R7, #066h, print3
+		MOV dptr, #msgVel2
+		CALL writeMSg
+		
+	print3:
+		CJNE R7, #099h, print4
+		MOV dptr, #msgVel3
+		CALL writeMSg
+		
+	print4:
+		CJNE R7, #0CCh, print5
+		MOV dptr, #msgVel4
+		CALL writeMSg
+		
+	print5:
+		CJNE R7, #0FFh, fim_print
+		MOV dptr, #msgVel5
+		CALL writeMSg
+		
+	fim_print:
 		CALL nextLine
+		
+		JB 0x22.5, print_horario
 		MOV dptr, #msgSentido1
 		CALL writeMsg
 		RET
 		
-printSentido:
-		CALL nextLine
+	print_horario:
 		MOV dptr, #msgSentido2
 		CALL writeMsg
-	
-		RET
-
-; ======================================================================= ;	
-; Falso digito
-
-cria_falso_dig:
-	;CJNE R7, #33h, falso1
-	;MOV R4, #01h
-	
-	;CJNE R7, #66h, falso2
-	MOV R4, #02h
-	
-	;CJNE R7, #99h, falso3
-	MOV R4, #03h
-	
-	;CJNE R7, #04h, falso4
-	MOV R4, #04h
-	
-	;CJNE R7, #05h, falso5
-	MOV R4, #05h
-	
-	RET
-
-; ======================================================================= ;	
-; LE SENTIDO DE ROTAÇÃO
-; # ANTI / * HORARIO
-le_sentido:
-	; Retorna tecla em R4
-	CALL click_tcl
-
-	CJNE R4, #0Ah, antiHorario
-	; Escreve msg horario
-	SETB 0x22.5
-	CALL clearLCD
-	MOV dptr, #msgSentido2 ; Escreve sentido de rotação
-	CALL writeMsg
-	
-	RET
-	
-antiHorario:
-	CJNE R4, #0Bh, le_sentido
-	; Escreve msg vel + antihorario
-	CLR 0x22.5
-	CALL clearLCD
-	MOV dptr, #msgSentido1 ; Escreve sentido de rotação
-	CALL writeMsg
-	
-	RET
-	
-
+		
+	RET		
+		
 ; ======================================================================= ;
 ;Inicializacao do display
 ;------------------------------------------------------------------------;
@@ -932,3 +800,4 @@ loop2:		mov r1, #0FFH
 			
 
 END
+	
