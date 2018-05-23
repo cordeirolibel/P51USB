@@ -22,10 +22,10 @@ LED2 EQU P3.7
 LED3 EQU P1.4
 SW1 EQU P3.2   
 	
-MOTOR1 EQU P2.1
-MOTOR2 EQU P2.0
+MOTOR1 EQU P2.0
+MOTOR2 EQU P2.1
 	
-PWM_FLAG EQU 0x22.7 ; Indica high/low
+PWM_FLAG EQU 0 ; Indica high/low
 
 	
 ; Display
@@ -40,13 +40,15 @@ SJMP main
 ORG 000Bh
 	CALL TIMER_0_INTERRUP
 	RETI
-	
-ORG 0033h
+
 main:
-	
 	;set time
 	CLR ET0 ; desligado
 	MOV TMOD, #01h
+	
+	MOV R7, #00h
+	MOV R6, #00h
+	
 	;MOV TH0, #0F0h
 	;MOV TL0, #00h
 	SETB TR0
@@ -64,10 +66,69 @@ main:
 	mov dptr, #msgParado
 	CALL writeMsg
 	
-loopMain:
 	CALL le_velocidade
+	
+loopMain:
 	JMP loopMain
+	
+; ======================================================================= ;
+;
+TIMER_0_INTERRUP:
+	CLR TR0
+	; Salva registradores
+	MOV 2fh, A
+	
+	JB PWM_FLAG, fimHigh ; Escolhe rotina de pulso alto ou baixo
+	
+fimLow:
+	SETB PWM_FLAG
+	CLR MOTOR1
+	CLR MOTOR2
+	
+	MOV TH0, R7
+	MOV TL0, R6
+	
+	
+	MOV A, 0x2E
+	
+	SETB TR0
+	CLR TF0
+	
+	RET
+	
+fimHigh:
 
+	JB 0x22.5, giraHorario
+	SETB MOTOR1
+	CLR MOTOR2
+	JMP continuaHigh
+
+giraHorario:
+	CLR MOTOR1
+	SETB MOTOR2
+
+continuaHigh:
+	CLR PWM_FLAG
+	
+	MOV A, #0FFh
+	CLR C			; Clear carry pra não afetar conta
+	
+	SUBB A, R7		; A = 255 - R7.
+	MOV TH0, A
+	
+	MOV A, #0FFh
+	CLR C
+	
+	SUBB A, R7
+	MOV TL0, A
+	
+	;recarrega registradores
+	MOV A, 2fh
+	
+	SETB TR0
+	CLR TF0
+	RET
+	
 ; ======================================================================= ;
 ; Le velocidade
 ; Usa R4
@@ -90,8 +151,8 @@ le_velocidade:
 	else1:
 		CJNE R4, #01h, else2
 		; Set vel 20%
-		MOV R7, #028h	; velocidade 51 = 20%
-		MOV R6, #028h
+		MOV R7, #033h	; velocidade 51 = 20%
+		MOV R6, #033h
 		
 		SETB ET0
 		
@@ -100,8 +161,8 @@ le_velocidade:
 	else2:
 		CJNE R4, #02h, else3
 		; Set vel 40%
-		MOV R7, #050h	; velocidade 51 = 40%
-		MOV R6, #050h
+		MOV R7, #066h	; velocidade 51 = 40%
+		MOV R6, #066h
 		
 		SETB ET0
 		
@@ -110,8 +171,8 @@ le_velocidade:
 	else3:
 		CJNE R4, #03h, else4
 		; Set vel 60%
-		MOV R7, #078h	; velocidade 51 = 60%
-		MOV R6, #078h
+		MOV R7, #099h	; velocidade 51 = 60%
+		MOV R6, #099h
 		
 		SETB ET0
 		
@@ -120,8 +181,8 @@ le_velocidade:
 	else4:
 		CJNE R4, #04h, else5
 		; Set vel 80%
-		MOV R7, #0A0h
-		MOV R6, #0A0h
+		MOV R7, #0CCh
+		MOV R6, #0CCh
 		
 		SETB ET0
 		
@@ -130,23 +191,21 @@ le_velocidade:
 	else5:
 		CJNE R4, #05h, else6
 		; velocidade 255 = 100%
-		;CLR ET0
+		CLR ET0
 		
-		MOV R7, #0C8h
-		MOV R6, #0C8h
+		MOV R7, #0FFh
+		MOV R6, #0FFh
 		
-		SETB ET0
-		
-		;JB 0x22.5, horario
+		JB 0x22.5, horario
 		; Set vel 100%
-		;SETB MOTOR1
-		;CLR MOTOR2
+		SETB MOTOR1
+		CLR MOTOR2
 		
-		;JMP fim_leitura
+		JMP fim_leitura
 		
-		;horario:
-		;	CLR MOTOR1
-		;	SETB MOTOR2
+		horario:
+			CLR MOTOR1
+			SETB MOTOR2
 		
 		JMP fim_leitura
 		
@@ -170,27 +229,27 @@ le_velocidade:
 		CALL writeMSg
 		
 	print1:
-		CJNE R7, #028h, print2
+		CJNE R7, #033h, print2
 		MOV dptr, #msgVel1
 		CALL writeMSg
 	
 	print2:
-		CJNE R7, #050h, print3
+		CJNE R7, #066h, print3
 		MOV dptr, #msgVel2
 		CALL writeMSg
 		
 	print3:
-		CJNE R7, #078h, print4
+		CJNE R7, #099h, print4
 		MOV dptr, #msgVel3
 		CALL writeMSg
 		
 	print4:
-		CJNE R7, #0A0h, print5
+		CJNE R7, #0CCh, print5
 		MOV dptr, #msgVel4
 		CALL writeMSg
 		
 	print5:
-		CJNE R7, #0C8h, fim_print
+		CJNE R7, #0FFh, fim_print
 		MOV dptr, #msgVel5
 		CALL writeMSg
 		
@@ -207,96 +266,7 @@ le_velocidade:
 		CALL writeMsg
 		
 	RET		
-	
-	
-
-; ======================================================================= ;	
-; printa o valor de r4 nos display
-; sempre mostra 3 digitos
-; usa A,B, R4
-
-print_num_3dig:
-	;primeiro digito
-	MOV A, R4
-	MOV B, #64h
-	DIV AB
-	ADD A, #30h
-	MOV dado, A
-	call dadodisp
-	
-	;segundo digito
-	MOV A, B
-	MOV B, #0Ah
-	DIV AB
-	ADD A, #30h
-	MOV dado, A
-	call dadodisp
-	
-	;terceiro digito
-	MOV A, B
-	ADD A, #30h
-	MOV dado, A
-	call dadodisp
-	
-	RET
-
-; ======================================================================= ;
-;
-TIMER_0_INTERRUP:
-	CLR TR0
-	MOV 0x2E, A
-	JB PWM_FLAG, fimHigh ; Escolhe rotina de pulso alto ou baixo
-	
-fimLow:
-	SETB PWM_FLAG
-	CLR MOTOR1
-	CLR MOTOR2
-	
-	SETB LED3
-	
-	MOV TH0, R7
-	MOV TL0, R6
-	
-	
-	MOV A, 0x2E
-	CLR TF0	; Clear timer flag
-	SETB TR0
-	RET
-	
-fimHigh:
-
-	JB 0x22.5, giraHorario
-	SETB MOTOR1
-	CLR MOTOR2
-	JMP continuaHigh
-
-giraHorario:
-	CLR MOTOR1
-	SETB MOTOR2
-
-continuaHigh:
-	CLR PWM_FLAG
-	
-	CLR LED3
-	
-	MOV A, #0FFh
-	CLR C			; Clear carry pra não afetar conta
-	
-	SUBB A, R7		; A = 255 - R7.
-	MOV TH0, A
-	
-	MOV A, #0FFh
-	CLR C
-	
-	SUBB A, R6
-	MOV TL0, A
-	
-	
-	MOV A, 0x2E
-	CLR TF0			; Clear the Timer 0 interrupt flag
-	SETB TR0
-	RET
-	
+		
 ; ======================================================================= ;
 ;Inicializacao do display
 ;------------------------------------------------------------------------;
@@ -506,7 +476,7 @@ jumpMain:
 ; usa A,r4,r5
 ; salva em 0x20.0
 read_tcl:
-	;JB 0x22.4, jumpMain
+	JB 0x22.4, jumpMain
 read:
 	MOV A, #00
 ; ================== Coluna 1 =====================
@@ -857,7 +827,7 @@ msgParado:  DB 'Motor parado',0
 msgSentido: DB 'Set sentido...',0
 msgSentido1: DB '# Anti Horario',0
 msgSentido2: DB '* Horario',0
-msgVel: DB 'Velocidade ',0
+msgVel: DB 'Set vel...',0
 msgVel1: DB 'Velocidade 20%',0 
 msgVel2: DB 'Velocidade 40%',0 
 msgVel3: DB 'Velocidade 60%',0 	
