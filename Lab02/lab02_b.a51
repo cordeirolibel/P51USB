@@ -156,11 +156,39 @@ le_velocidade:
 		JMP fim_leitura
 		
 	else7:
-		CJNE R4, #0Bh, fim_leitura
+		CJNE R4, #0Bh, else8
 		SETB 0x22.5
 		
-	fim_leitura:
+	else8:
+		CJNE R4, #07h, else9
 		
+		CJNE R7, #00h, reduz
+		JMP fim_leitura
+		
+		reduz:
+		
+		DEC R7
+		DEC R7
+		
+		DEC R6
+		DEC R6
+			
+		JMP fim_leitura
+		
+	else9:
+		CJNE R4, #09h, fim_leitura
+		
+		CJNE R7, #0C8h, acc_vel
+		JMP fim_leitura
+		
+		acc_vel:
+		INC R7
+		INC R7
+		
+		INC R6
+		INC R6
+		
+	fim_leitura:
 		; Limpa LCD
 		CALL clearLCD
 		
@@ -169,34 +197,20 @@ le_velocidade:
 		MOV dptr, #msgParado
 		CALL writeMSg
 		
-	print1:
-		CJNE R7, #028h, print2
-		MOV dptr, #msgVel1
-		CALL writeMSg
-	
-	print2:
-		CJNE R7, #050h, print3
-		MOV dptr, #msgVel2
-		CALL writeMSg
-		
-	print3:
-		CJNE R7, #078h, print4
-		MOV dptr, #msgVel3
-		CALL writeMSg
-		
-	print4:
-		CJNE R7, #0A0h, print5
-		MOV dptr, #msgVel4
-		CALL writeMSg
-		
-	print5:
-		CJNE R7, #0C8h, fim_print
-		MOV dptr, #msgVel5
-		CALL writeMSg
-		
-	fim_print:
 		CALL nextLine
 		
+		JMP print_sentido
+		
+	print1:
+	
+		MOV dptr, #msgVel
+		CALL writeMsg
+		
+		CALL print_num_3dig
+		
+		CALL nextLine
+		
+	print_sentido:
 		JB 0x22.5, print_horario
 		MOV dptr, #msgSentido1
 		CALL writeMsg
@@ -211,13 +225,20 @@ le_velocidade:
 	
 
 ; ======================================================================= ;	
-; printa o valor de r4 nos display
+; printa o valor de r7/2 nos display
 ; sempre mostra 3 digitos
-; usa A,B, R4
+; usa A,B, R7
 
 print_num_3dig:
+
+	CLR C
+	MOV B, #02h
+	MOV A, R7
+	
+	DIV AB
+
 	;primeiro digito
-	MOV A, R4
+	;MOV A, R4
 	MOV B, #64h
 	DIV AB
 	ADD A, #30h
@@ -237,6 +258,9 @@ print_num_3dig:
 	ADD A, #30h
 	MOV dado, A
 	call dadodisp
+	
+	MOV dado, #025h
+	CALL dadodisp
 	
 	RET
 
@@ -854,7 +878,6 @@ lp1_ms:
 
 ORG 0500h
 msgParado:  DB 'Motor parado',0
-msgSentido: DB 'Set sentido...',0
 msgSentido1: DB '# Anti Horario',0
 msgSentido2: DB '* Horario',0
 msgVel: DB 'Velocidade ',0
