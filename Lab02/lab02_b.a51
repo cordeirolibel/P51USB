@@ -25,7 +25,7 @@ SW1 EQU P3.2
 MOTOR1 EQU P2.0
 MOTOR2 EQU P2.1
 	
-PWM_FLAG EQU 0 ; Indica high/low
+PWM_FLAG EQU 0x22.7 ; Indica high/low
 
 	
 ; Display
@@ -37,11 +37,13 @@ dado  EQU		P0
 ORG 0000h
 SJMP main
 
-;ORG 000Bh
-;	CALL TIMER_0_INTERRUP
-;	RETI
-
+ORG 000Bh
+	CALL TIMER_0_INTERRUP
+	RETI
+	
+ORG 0033h
 main:
+	
 	;set time
 	CLR ET0 ; desligado
 	MOV TMOD, #01h
@@ -63,13 +65,14 @@ main:
 loopMain:
 	CALL le_velocidade
 	JMP loopMain
-	
+
 ; ======================================================================= ;
 ; Le velocidade
 ; Usa R4
 le_velocidade:
 		; Retorna tecla em R4
-		CALL click_tcl
+		;CALL click_tcl
+		mov r4, #02h
 		
 		CJNE R4, #00h, else1
 		
@@ -205,7 +208,97 @@ le_velocidade:
 		CALL writeMsg
 		
 	RET		
-		
+	
+	
+; ======================================================================= ;
+; PWM setup
+; Usa R7
+PWM_SETUP:
+	;MOV TMOD,#01H
+	;MOV R7, #0FFh; 0 = 0V e 255 = 5V - PWM width
+	
+	;set time
+	CLR ET0 ; desligado
+	MOV TMOD, #01h
+	;MOV TH0, R7
+	;MOV TL0, #99h
+	
+	;MOV TH0, #0F0h
+	;MOV TL0, #00h
+	SETB TR0
+	
+	;init
+	SETB EA
+	
+	;CLR ET0 ; Enable Timer 0 interrup
+	SETB ET0
+	;SETB TR0 ; Start Timer
+	RET
+	
+; ======================================================================= ;
+; Para pwm
+PWM_STOP:
+	CLR TR0
+	;CLR ET0
+	RET
+
+; ======================================================================= ;
+;
+TIMER_0_INTERRUP:
+	CLR TR0
+	MOV 0x2E, A
+	JB PWM_FLAG, fimHigh ; Escolhe rotina de pulso alto ou baixo
+	
+fimLow:
+	SETB PWM_FLAG
+	CLR MOTOR1
+	CLR MOTOR2
+	
+	SETB LED3
+	
+	MOV TH0, R7
+	MOV TL0, R6
+	
+	
+	MOV A, 0x2E
+	CLR TF0	; Clear timer flag
+	SETB TR0
+	RET
+	
+fimHigh:
+
+	JB 0x22.5, giraHorario
+	SETB MOTOR1
+	CLR MOTOR2
+	JMP continuaHigh
+
+giraHorario:
+	CLR MOTOR1
+	SETB MOTOR2
+
+continuaHigh:
+	CLR PWM_FLAG
+	
+	CLR LED3
+	
+	MOV A, #0FFh
+	CLR C			; Clear carry pra não afetar conta
+	
+	SUBB A, R7		; A = 255 - R7.
+	MOV TH0, A
+	
+	MOV A, #0FFh
+	CLR C
+	
+	SUBB A, R6
+	MOV TL0, A
+	
+	
+	MOV A, 0x2E
+	CLR TF0			; Clear the Timer 0 interrupt flag
+	SETB TR0
+	RET
+	
 ; ======================================================================= ;
 ;Inicializacao do display
 ;------------------------------------------------------------------------;
@@ -415,7 +508,7 @@ jumpMain:
 ; usa A,r4,r5
 ; salva em 0x20.0
 read_tcl:
-	JB 0x22.4, jumpMain
+	;JB 0x22.4, jumpMain
 read:
 	MOV A, #00
 ; ================== Coluna 1 =====================

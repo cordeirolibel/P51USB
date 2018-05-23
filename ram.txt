@@ -9,6 +9,7 @@
 	22.4            enable motor
 	22.5		sentido rotacao motor (1 = horario)
 	22.6		flag nova volta
+	22.7 	 	pwm flag
 23	Ciclos do motor
 24	Voltas do motor
 2a   ~ 2f       salva alguns registradores (para funcoes)
@@ -40,6 +41,11 @@
 ; 20.4 -> 4
 ; 20.5 -> 5
 ; 20.6 -> 6
+; 20.7 -> 7
+; 21.0 -> 8
+; 21.1 -> 9
+; 21.2 -> * (10)
+; 21.3 -> # (11)
 
 
 ;===============================================================
