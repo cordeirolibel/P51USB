@@ -41,9 +41,12 @@ void lcd_data(unsigned char disp_data)  //Function to send display data to LCD
 void escreveArray(unsigned char mensagem[34])
 {
 	unsigned char k;
-	lcd_init();
-	lcd_cmd(0x80);
-	k = 0;
+	k = 1;
+	if (mensagem[0] != '\r'){
+		lcd_init();
+		lcd_cmd(0x80);
+		k=0;
+	}
 	
 	while(mensagem[k] != '\0')
 	{

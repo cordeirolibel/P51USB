@@ -2,7 +2,7 @@
 #include <lcd.h>
 #include <at89c5131.h>
 
-sbit LED2 = P3^7;
+sbit LED2 = P1^4; // LED 3 = 1.4 , LED2 = 3.7
 
 //Teclado
 sbit A1 = P2^1;
@@ -27,6 +27,7 @@ unsigned char readTcl(void);
 void initSPI(void);
 char SPI_sample();
 
+
 void main(void)
 {
 	unsigned char c;
@@ -34,9 +35,10 @@ void main(void)
 	int delay_ms;
 	
 	//inits
+	lcd_init();
 	initSerial();
 	initSPI();	
-	initPWM();
+
 	EA = 1;
 	LED2 = 0;
  	
@@ -46,25 +48,25 @@ void main(void)
 	while(1){
 		c = readTcl();
 
-		if (c>='1' and c<='9')
+		if (c>='1' && c<='9')
 		{
 			escreveArray("Frequencia:\n");
-			escreveArray(c);
-			escreveArray(" Hz");
+			lcd_data(c);
+			escreveArray("\r Hz");
 			freq = c-'1'+1;
 		}
 		else if( c == '*')
 		{
 			escreveArray("Frequencia");
-			escreveArray(freq+'1'-1);
-			escreveArray(" Hz\n");
-			escreveArray("Rodando");
+			lcd_data(freq+'1'-1);
+			escreveArray("\r Hz\n");
+			escreveArray("\rRodando");
 			break;
 		}
 	}
 	
-	delay_ms = int(1000/(freq*2));
-	
+
+	delay_ms = (int)(1000/(freq*2));
 	//================================SEND ADC
 	while(1){
 		c = SPI_sample();
