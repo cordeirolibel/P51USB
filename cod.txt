@@ -1,0 +1,56 @@
+#include <at89c5131.h>
+#include <lcd.h>
+
+// NÃO USAR PINOS 3.0 E 3.1 (NAO USAR/DO NOT USE)
+
+void main(void)
+{
+	while(1){
+		escreveArray("8000!!");
+		msdelay(5000);
+		escreveArray("ragnar>joãodasneves");
+		msdelay(5000);
+	}
+}
+
+void escreveArray(unsigned char mensagem[15])
+{
+	unsigned char k;
+	lcd_init();
+	lcd_cmd(0x80);
+	k = 0;
+	
+	while(mensagem[k] != '\0')
+	{
+		lcd_data(mensagem[k]);
+		k++;
+	}
+}
+
+void serialInit()
+{
+	SM0 = 0;
+	SM1 = 1;
+	SM2 = 0;
+	EA = 1;
+	REN = 1;
+	ES = 1;
+	
+	BRL = 100;
+	BDRCON = 6;
+	PCON |= 0x40;
+	BDRCON |= 0x10;
+	
+}
+
+void serialSend(unsigned char in)
+{
+	SBUF = in;
+}
+
+unsigned char serialRead()
+{
+	return SBUF;
+}
+	
+	
