@@ -26,6 +26,7 @@ void main(void)
 	initSerial();
 	EA = 1;
   
+	escreveArray("Oi");
 	
 	while(1){
 		while(!(c = readTcl()));
@@ -60,6 +61,7 @@ void sendChar(unsigned char c){
 	LED2 = 1;
 }
 
+
 unsigned char readTcl(void)
 {
   B1=1;
@@ -71,36 +73,40 @@ unsigned char readTcl(void)
   A3=1;
   A4=1;
 	
-  if(B1==0){msdelay(100);while(B1==0);return '#';}
-  if(B2==0){msdelay(100);while(B2==0);return '0';}
-  if(B3==0){msdelay(100);while(B3==0);return '*';}
+	msdelay(1);
+  if(B1==0){msdelay(1);while(B1==0);return '#';}
+  if(B2==0){msdelay(1);while(B2==0);return '0';}
+  if(B3==0){msdelay(1);while(B3==0);return '*';}
   
   A1=1;
   A2=0;
   A3=1;
   A4=1;
 	
-  if(B1==0){msdelay(100);while(B1==0);return '3';}
-  if(B2==0){msdelay(100);while(B2==0);return '2';}
-  if(B3==0){msdelay(100);while(B3==0);return '1';}
+	msdelay(1);
+  if(B1==0){msdelay(1);while(B1==0);return '3';}
+  if(B2==0){msdelay(1);while(B2==0);return '2';}
+  if(B3==0){msdelay(1);while(B3==0);return '1';}
   
   A1=1;
   A2=1;
   A3=0;
   A4=1;
 	
-  if(B1==0){msdelay(100);while(B1==0);return '6';}
-  if(B2==0){msdelay(100);while(B2==0);return '5';}
-  if(B3==0){msdelay(100);while(B3==0);return '4';}
+	msdelay(1);
+  if(B1==0){msdelay(1);while(B1==0);return '6';}
+  if(B2==0){msdelay(1);while(B2==0);return '5';}
+  if(B3==0){msdelay(1);while(B3==0);return '4';}
   
   A1=1;
   A2=1;
   A3=1;
   A4=0;
 	
-  if(B1==0){msdelay(100);while(B1==0);return '9';}
-  if(B2==0){msdelay(100);while(B2==0);return '8';}
-  if(B3==0){msdelay(100);while(B3==0);return '7';}
+	msdelay(1);
+  if(B1==0){msdelay(1);while(B1==0);return '9';}
+  if(B2==0){msdelay(1);while(B2==0);return '8';}
+  if(B3==0){msdelay(1);while(B3==0);return '7';}
   
   return 0;
 }
