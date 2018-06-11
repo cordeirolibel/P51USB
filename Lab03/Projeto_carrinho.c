@@ -15,7 +15,7 @@ sbit B3 = P3^6;
 
 //SPI
 char serial_data;
-char data_example=0x55;
+char data_example=0xC0;
 char data_save;
 bit transmit_completed= 0;
 
@@ -35,14 +35,39 @@ void main(void)
 	initSerial();
 	initSPI();	
 	EA = 1;
-  
-	escreveArray("Oi");
+ 	
+	escreveArray("Select freq:");
+	lcd_cmd(0x0C0);
+	while(1){
+		c = readTcl();
+		
+		if (c == '1')
+		{
+			// 2Hz
+			lcd_cmd(0x01);
+			escreveArray("Frequencia:");
+			lcd_cmd(0x0C0);
+			escreveArray("2Hz");
+		}
+		else if(c == '2')
+		{
+			// 4Hz
+			lcd_cmd(0x01);
+			escreveArray("Frequencia:");
+			lcd_cmd(0x0C0);
+			escreveArray("2Hz");
+		}
+		else if( c == '*')
+		{
+			lcd_cmd(0x01);
+			escreveArray("Frequencia:");
+			lcd_cmd(0x0C0);
+			escreveArray("Rodando");
+			break;
+		}
+	}
 	
 	
-	
-	sendChar('O');
-	sendChar('l');
-	sendChar('a');
 	
 	while(1){
 		//while(!(c = readTcl()));
@@ -62,13 +87,19 @@ void main(void)
 
 //Usa P1.1 P1.7 P1.5 P1.6
 void initSPI(void){
-	SPCON |= 0x10; /* Master mode */
-	P1_1=1; /* enable master */
-	SPCON |= 0x82; /* Fclk Periph/128 */
-	SPCON &= ~0x08; /* CPOL=0; transmit mode example */
-	SPCON |= 0x04; /* CPHA=1; transmit mode example */
-	IEN1 |= 0x04; /* enable spi interrupt */
-	SPCON |= 0x40; /* run spi */
+
+	SPCON |= 0x10;  // Master mode
+ 	SPCON |= 0x82;  // Fclk Periph/128
+	SPCON |= 0x20;  // P1.1 is available as standard I/O pin 
+
+ 	SPCON &= ~0x08; // CPOL=0; transmit mode example 
+ 	SPCON &= ~0x04; // CPHA=0; transmit mode example 
+
+ 	IEN1 |= 0x04;  // enable spi interrupt 
+ 	SPCON |= 0x40;  // run spi 
+
+ 	EA=1;      // enable interrupts 
+ 	P1_1 = 1;    // Chip Select disable
 }
 
 /**
@@ -94,11 +125,16 @@ void it_SPI(void) interrupt 9 /* interrupt address is 0x004B */
 }
 
 char SPI_sample(){
+	
 	SPDAT=data_example; /* send an example data */
+	P1_1=0;
 	while(!transmit_completed);/* wait end of transmition */
 	transmit_completed = 0; /* clear software transfert flag */
 	SPDAT=0x00; /* data is send to generate SCK signal */
 	while(!transmit_completed);/* wait end of transmition */
+	
+	P1_1=1;
+	
 	transmit_completed = 0; /* clear software transfert flag */
 	data_save = serial_data; /* save receive data */ 
 	

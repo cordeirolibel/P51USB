@@ -48,6 +48,7 @@ void escreveArray(unsigned char mensagem[34])
 	while(mensagem[k] != '\0')
 	{
 		if (mensagem[k] == '\n')
+			// Pula linha
 			lcd_cmd(0x0C0);
 		else
 			lcd_data(mensagem[k]);
