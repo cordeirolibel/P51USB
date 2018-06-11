@@ -30,58 +30,49 @@ char SPI_sample();
 void main(void)
 {
 	unsigned char c;
-
+	int freq = 1;
+	int delay_ms;
+	
 	//inits
 	initSerial();
 	initSPI();	
+	initPWM();
 	EA = 1;
+	LED2 = 0;
  	
-	escreveArray("Select freq:");
-	lcd_cmd(0x0C0);
+	//================================SELECT FREQ
+	escreveArray("Select freq:\n 1 Hz");
+
 	while(1){
 		c = readTcl();
-		
-		if (c == '1')
+
+		if (c>='1' and c<='9')
 		{
-			// 2Hz
-			lcd_cmd(0x01);
-			escreveArray("Frequencia:");
-			lcd_cmd(0x0C0);
-			escreveArray("2Hz");
-		}
-		else if(c == '2')
-		{
-			// 4Hz
-			lcd_cmd(0x01);
-			escreveArray("Frequencia:");
-			lcd_cmd(0x0C0);
-			escreveArray("2Hz");
+			escreveArray("Frequencia:\n");
+			escreveArray(c);
+			escreveArray(" Hz");
+			freq = c-'1'+1;
 		}
 		else if( c == '*')
 		{
-			lcd_cmd(0x01);
-			escreveArray("Frequencia:");
-			lcd_cmd(0x0C0);
+			escreveArray("Frequencia");
+			escreveArray(freq+'1'-1);
+			escreveArray(" Hz\n");
 			escreveArray("Rodando");
 			break;
 		}
 	}
 	
+	delay_ms = int(1000/(freq*2));
 	
-	
+	//================================SEND ADC
 	while(1){
-		//while(!(c = readTcl()));
-		//lcd_data(c);
-		//escreveArray("8001!!");
-		//msdelay(2000);
-		//sendChar('a');
-		//escreveArray("jhonisnow>\nragnar");
-		//msdelay(2000);
-		//sendChar('1');
-		
 		c = SPI_sample();
 		sendChar(c);
-		msdelay(1);
+		LED2 = 1;
+		msdelay(delay_ms);
+		LED2 = 0;
+		msdelay(delay_ms);
 	}
 }
 
@@ -159,9 +150,7 @@ void initSerial(void){
 void sendChar(unsigned char c){
 	SBUF = c;
 	TI = 0;
-	LED2 = 0;
 	while(!TI){}
-	LED2 = 1;
 }
 
 
