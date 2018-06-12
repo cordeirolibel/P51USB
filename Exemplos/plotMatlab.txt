@@ -1,9 +1,11 @@
 clear all;
 close all;
-s = serial('COM7');
+
+s = serial('COM6');
+
 set(s,'InputBufferSize',100);
 set(s,'FlowControl','hardware');
-set(s,'BaudRate',9600);
+set(s,'BaudRate',57600);
 set(s,'Parity','none');
 set(s,'DataBits',8);
 set(s,'StopBit',1);

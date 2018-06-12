@@ -96,9 +96,6 @@ void InitPWM()
 void Timer0_ISR (void) interrupt 1   
 {
 	TR0 = 0;    // Stop Timer 0
-	
-
-
 			if(PWM1_Pin)	// if PWM1_Pin is high
 			{
 				PWM1_Pin = 0;

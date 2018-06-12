@@ -2,7 +2,7 @@
 #include <lcd.h>
 #include <at89c5131.h>
 
-sbit LED2 = P1^4; // LED 3 = 1.4 , LED2 = 3.7
+
 
 //Teclado
 sbit A1 = P2^1;
@@ -16,7 +16,7 @@ sbit B3 = P3^6;
 //SPI
 char serial_data;
 char data_example=0xC0;
-char data_save;
+
 bit transmit_completed= 0;
 
 // NÃO USAR PINOS 3.0 E 3.1 (NAO USAR/DO NOT USE/ N'UTILLISEZ PAS/ NON Y USES)
@@ -38,9 +38,9 @@ void main(void)
 	lcd_init();
 	initSerial();
 	initSPI();	
-
+	
 	EA = 1;
-	LED2 = 0;
+	LED3 = 1;
  	
 	//================================SELECT FREQ
 	escreveArray("Select freq:\n 1 Hz");
@@ -57,7 +57,7 @@ void main(void)
 		}
 		else if( c == '*')
 		{
-			escreveArray("Frequencia");
+			escreveArray("Frequencia: ");
 			lcd_data(freq+'1'-1);
 			escreveArray("\r Hz\n");
 			escreveArray("\rRodando");
@@ -65,16 +65,24 @@ void main(void)
 		}
 	}
 	
+	InitTimer0();
 
-	delay_ms = (int)(1000/(freq*2));
+	delay_ms = (int)(1000/(freq));
 	//================================SEND ADC
 	while(1){
+		if (readTcl() == '*')
+		{
+			LED3 = 1;
+			while(readTcl() != '*');
+		}
+		
+		ET0 = 0;
 		c = SPI_sample();
 		sendChar(c);
-		LED2 = 1;
-		msdelay(delay_ms);
-		LED2 = 0;
-		msdelay(delay_ms);
+		ET0 = 1;
+		
+		msdelayint(delay_ms);
+		
 	}
 }
 
@@ -91,7 +99,7 @@ void initSPI(void){
  	IEN1 |= 0x04;  // enable spi interrupt 
  	SPCON |= 0x40;  // run spi 
 
- 	EA=1;      // enable interrupts 
+ 	//EA=1;      // enable interrupts 
  	P1_1 = 1;    // Chip Select disable
 }
 
