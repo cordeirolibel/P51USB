@@ -2,8 +2,6 @@
 #include <lcd.h>
 #include <at89c5131.h>
 
-
-
 //Teclado
 sbit A1 = P2^1;
 sbit A2 = P3^3;
@@ -31,8 +29,10 @@ char SPI_sample();
 void main(void)
 {
 	unsigned char c;
+	int i;
 	int freq = 1;
 	int delay_ms;
+	int medias;
 	
 	//inits
 	lcd_init();
@@ -67,7 +67,7 @@ void main(void)
 	
 	InitTimer0();
 
-	delay_ms = (int)(1000/(freq));
+	delay_ms = (int)(1000/(freq*4));
 	//================================SEND ADC
 	while(1){
 		if (readTcl() == '*')
@@ -77,11 +77,18 @@ void main(void)
 		}
 		
 		ET0 = 0;
-		c = SPI_sample();
+		LED3 = 1;
+		//media
+		medias= 0;
+		for (i=0;i<4;i++){
+			medias+=SPI_sample();
+		}
+		c = medias/4;
+		//send
 		sendChar(c);
 		ET0 = 1;
 		
-		msdelayint(delay_ms);
+			(delay_ms);
 		
 	}
 }
