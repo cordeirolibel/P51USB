@@ -63,9 +63,6 @@ void initRTC(void){
 	IEN1 = 0x02;//habilita a int do i2c
 }
 
-
-
-
 void setTimeRTC(Time* time)
 {
     I2C_Start();                          // Start I2C communication
