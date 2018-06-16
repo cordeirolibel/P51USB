@@ -18,13 +18,27 @@ void initSerial(void){
 	//TI 		= 0;
 }
 
-
 char getChar(void){
 	unsigned char caractere;
 	while(!RI){}
 	caractere = SBUF;
 	RI = 0;
 	return caractere;
+}
+
+void getString(char* str, unsigned int tam){
+ int i;
+ char caractere;
+ for(i=0;i<tam;i++){
+  caractere = getChar();
+  if (caractere=='\n')
+   continue;
+  else if (caractere=='\0'||caractere==0x0D){
+   str[i] = '\0';
+   return;
+  }
+  str[i] = caractere;
+ }
 }
 
 void sendChar(unsigned char caractere){

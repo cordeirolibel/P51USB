@@ -13,6 +13,7 @@ void escreveTime(Time* time);
 void main(void)
 {
 	Time time;
+	char mensagem[10];
 	
 	//init
 	initLCD();
@@ -20,73 +21,70 @@ void main(void)
 	initRTC();
 	
 	//set time
-	time.segundo = 2;
-	time.minuto = 3;
-	time.hora = 4;
-	time.dia = 5;
-	time.dia_semana = 6;
-	time.mes = 7;
-	time.ano = 18;
+	time.segundo = 0x02;
+	time.minuto = 0x03;
+	time.hora = 0x04;
+	time.dia = 0x05;
+	time.dia_semana = 0x06;
+	time.mes = 0x07;
+	time.ano = 0x18;
 	
 	setTimeRTC(&time);
 	
-	//mostrar time 
+//mostrar time 
 	while(1){
-		escreveTime(&time);
-		msdelay(2000);
-		getTimeRTC(&time);
-	}
+  getString(mensagem,10);
+  sendString(mensagem);
+  clearLCD();
+  escreveLCD(mensagem);
+ }
 }
 
 void hex2str(unsigned char hex, char* str){
-	sprintf(str,"%x",hex);
+ str[0] = hex/16+'0';
+ str[1] = hex%16+'0';
+ str[2] = '\0';
 }
 
+//monstradata no lcd
+//hora:min:seg
+//dia:mes:ano - dia_semana
 void escreveTime(Time* time){
-	char str[3];
-	
-	clearLCD();
-	
-	//dia
-	hex2str(time->dia,str);
-	escreveLCD(str);
-	escreveLCD(":");
-	
-	//minuto
-	hex2str(time->minuto,str);
-	escreveLCD(str);
-	escreveLCD(":");
-	
-	//segundo
-	hex2str(time->segundo,str);
-	escreveLCD(str);
-	escreveLCD("\n");
-	
-	//dia
-	hex2str(time->dia,str);
-	escreveLCD(str);
-	escreveLCD(":");
-	
-	//mes
-	hex2str(time->mes,str);
-	escreveLCD(str);
-	escreveLCD(":20");
-	
-	//ano
-	hex2str(time->dia,str);
-	escreveLCD(str);
-	escreveLCD(" - ");
-	
-	//dia da semana
-	hex2str(time->dia_semana,str);
-	escreveLCD(str);
+ char str[3];
+ 
+ clearLCD();
+ 
+ //hora
+ hex2str(time->hora,str);
+ escreveLCD(str);
+ escreveLCD(":");
+ 
+ //minuto
+ hex2str(time->minuto,str);
+ escreveLCD(str);
+ escreveLCD(":");
+ 
+ //segundo
+ hex2str(time->segundo,str);
+ escreveLCD(str);
+ escreveLCD("\n");
+ 
+ //dia
+ hex2str(time->dia,str);
+ escreveLCD(str);
+ escreveLCD(":");
+ 
+ //mes
+ hex2str(time->mes,str);
+ escreveLCD(str);
+ escreveLCD(":");
+ 
+ //ano
+ hex2str(time->ano,str);
+ escreveLCD(str);
+ escreveLCD(" - ");
+ 
+ //dia da semana
+ hex2str(time->dia_semana,str);
+ escreveLCD(str);
 }
-
-
-
-
-
-
-
-
-

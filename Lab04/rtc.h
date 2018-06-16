@@ -32,35 +32,23 @@ typedef struct
 	unsigned char segundo; //sempre iniciar com numero par
 } Time; 
 				
-void initRTC(void){
-	//1.0 - Desabilita as interrupções
-	IEN0 = 0x00;
-	IEN1 = 0x00;
-	
-	//1.1 - Configurar o Timer 0
-	TMOD = 0x01;// T0 no modo timer 16bits
+void initRTC(void)
+{
+    I2C_Init();                             // Initialize the I2c module.
+    I2C_Start();                            // Start I2C communication
 
-	//1.2 - Configurar o I2C (TWI)
-	SCL_PIN  = 1;
-	SDA_PIN  = 1;// Coloca os latches em high-Z
+    I2C_Write(C_Ds1307WriteMode_U8);        // Connect to DS1307 by sending its ID on I2c Bus
+    I2C_Write(C_Ds1307ControlRegAddress_U8);// Select the Ds1307 ControlRegister to configure Ds1307
 
-	// CR2 = 0, CR1 = 0, CR0 = 1, divisor XX,
-	// clock 24MHz, I2C = XXXk
-	SSCON = 0x41;
-	//01000001b
-	//||||||||_ CR0
-	//|||||||__ CR1
-	//||||||___ AA 
-	//|||||____ SI  flag de int
-	//||||_____ STO to send a stop
-	//|||______ STA to send a start
-	//||_______ SSIE Enable TWI
-	//|________ CR2
+    I2C_Write(0x00);                        // Write 0x00 to Control register to disable SQW-Out
 
-	//1-3 Habilita as interrupções
-	IPL1 = 0x02;
-	IPH1 = 0x02;
-	IEN1 = 0x02;//habilita a int do i2c
+    I2C_Stop();                             // Stop I2C communication after initializing DS1307
+}
+
+void I2C_Init(void){
+ //1.2 - Configurar o I2C (TWI)
+ SCL_PIN  = 1;
+ SDA_PIN  = 1;// Coloca os latches em high-Z
 }
 
 void setTimeRTC(Time* time)
@@ -135,7 +123,7 @@ void getTimeRTC(Time *time)
 void DELAY_us(unsigned int time)  
 {
     unsigned int i;
-    for(i=0;i<time*2;i++);
+    for(i=0;i<time*10;i++);
 }
 
 void I2C_Start(void)
