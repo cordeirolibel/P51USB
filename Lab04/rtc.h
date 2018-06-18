@@ -38,7 +38,7 @@ typedef struct
 
 int isEqual(Time t1, Time t2, int completo){
 	
-		if (t1.segundos != t2.segundos)
+		if (t1.segundo != t2.segundo)
 			return 0;
 		else if (t1.minuto != t2.minuto)
 			return 0;

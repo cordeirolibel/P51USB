@@ -3,13 +3,14 @@
 #include <lcd.h>
 #include <relogio.h>
 
-sbit BUZZER = P2^5;//=================EDITAR ISSO
-sbit LED = P2^5;
+sbit BUZZER = P1^4;//=================EDITAR ISSO
+sbit LED = P1^4;
 
 // NAO USAR P3.0 E P3.1
 
 void telaRelogio(void);
 void telaAlarme(void);
+void verificaAlarme(void);
 
 Time tm_atual;
 Time tm_alarme;
@@ -22,7 +23,10 @@ void main(void)
 	initSerial();
 	initRTC();
 	
-	relogio();
+	
+	telaRelogio();
+	telaAlarme();
+	telaRelogio();
 	
  }
 
@@ -35,12 +39,16 @@ void telaRelogio(void){
 	
 	//sai com enter
 	while(1){
+		verificaAlarme();
+		
 		car = getCharLivre();
 		if (car == 'e') //edicao
 			recebeTime(&tm_atual,1);
 		else if (car == '\n')//saida
 			return;
-			
+		
+		getTimeRTC(&tm_atual);
+		
 		atual = tm_atual.segundo;
 		//so mostra no LCD se mudou
 		if (atual!=antigo){
@@ -55,19 +63,25 @@ void telaAlarme(void){
 	char car;
 	
 	while(1){
+		verificaAlarme();
 		
 		escreveTime(&tm_alarme,"Alarme");
 		
 		car = getCharLivre();
-		if (car == 'e') //edicao
+		
+		//edicao
+		if (car == 'e') 
 			recebeTime(&tm_alarme,0);
-		else if (car == '\n')//saida
+		//saida
+		else if (car == '\n')
 			return;
+		//ativa
 		else if (car == 'a'){
 			escreveLCD("\rAlarme \nAtivado");
 			tm_alarme.estado = ON;
 			msdelay(1000);
 		}
+		//desativa
 		else if (car == 'd'){
 			escreveLCD("\rAlarme \nDesativado");
 			tm_alarme.estado = OFF;
@@ -76,21 +90,56 @@ void telaAlarme(void){
 	}
 }
 
-void verificaAlarme(){
+void verificaAlarme(void){
+	int i;
+	char car;
+	
+	escreveLCD("\rAlarme!!\n");
+	
 	//alarme ativado e deu o horario
 	if ((tm_alarme.estado == ON) &&
 			(isEqual(tm_alarme,tm_atual,0))){
-			escreveLCD("\rAlarme!!\n");
+				
+			getTimeRTC(&tm_atual);
+			escreveTime(&tm_atual,"Alarme!!");
 				
 			car = getCharLivre();
 			
-			//verifica carectere
+			//saida
+			if (car == '\n'){
+				//desativa tudo
+				BUZZER = 1;
+				LED = 1;
+				return;
+			}
+			//soneca
+			else if (car == 's'){
+				//desativa tudo
+				BUZZER = 1;
+				LED = 1;
+				//espera 15s
+				for(i=0;i<150;i++){
+					//mostra horario atual
+					getTimeRTC(&tm_atual);
+					escreveTime(&tm_atual,"Soneca");
+					
+					car = getCharLivre();
+					if(car=='s'||car=='\n')
+						break;
+					msdelay(100);
+				}
 				
-			//pica led
-				
-				
+			}
 			
-				
+			//pica led/buzzer
+			//liga o buzzer
+			BUZZER = 0;
+			LED = 0;
+			msdelay(500);
+			//liga
+			BUZZER = 1;
+			LED = 1;
+			msdelay(500);	
 	}
 			
 }
