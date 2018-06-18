@@ -5,6 +5,12 @@ sbit rs = P2^5;  //RS pin connected to pin 2 of port 3
 sbit rw = P2^6;  // RW pin connected to pin 3 of port 3
 sbit e =  P2^7;  //E pin connected to pin 4 of port 3
 
+void msdelay(unsigned int time)  // Function for creating delay in milliseconds.
+{
+    unsigned i,j ;
+    for(i=0;i<time;i++)    
+    for(j=0;j<1275;j++);
+}
 
 void lcd_cmd(unsigned char command)  //Function to send command instruction to LCD
 {

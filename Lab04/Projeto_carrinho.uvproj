@@ -389,6 +389,11 @@
               <FileType>5</FileType>
               <FilePath>.\serial.h</FilePath>
             </File>
+            <File>
+              <FileName>relogio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\relogio.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

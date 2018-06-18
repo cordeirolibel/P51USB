@@ -30,6 +30,7 @@ typedef struct
 	unsigned char hora;
 	unsigned char minuto;
 	unsigned char segundo; //sempre iniciar com numero par
+	int _24h;
 } Time; 
 				
 void initRTC(void)

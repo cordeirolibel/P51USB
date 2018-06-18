@@ -30,7 +30,7 @@ char getChar(void){
 char getCharLivre(void){
 	unsigned char caractere;
 	int i = 0;
-	while(!RI && i<100){i++}
+	while(!RI && i<100){i++;}
 	if (i==100)
 		return 0;
 	caractere = SBUF;

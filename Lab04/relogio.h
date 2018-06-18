@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <at89c5131.h>
-#include <lcd.h>
 #include <rtc.h>
 #include <serial.h>
 
@@ -10,11 +9,11 @@ void hex2str(unsigned char hex, char* str){
 	str[2] = '\0';
 }
 
-int str2int(char *str){
+unsigned char str2hex(char *str){
     int i;
-    int saida = 0;
+    unsigned char saida = 0;
     for (i=0;str[i]!='\0';i++){
-        saida *= 10;
+        saida  = saida<<4;
         saida += str[0]-'0';
     }
     return saida;
@@ -34,7 +33,7 @@ int __recebe1argumeto(char *str){
 	getString(mensagem,5);
 	escreveLCD(mensagem);
 	
-	return str2int(mensagem);
+	return str2hex(mensagem);
 }
 
 //recebe uma data do usuario
