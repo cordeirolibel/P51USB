@@ -14,7 +14,7 @@ unsigned char str2hex(char *str){
     unsigned char saida = 0;
     for (i=0;str[i]!='\0';i++){
         saida  = saida<<4;
-        saida += str[0]-'0';
+        saida += str[i]-'0';
     }
     return saida;
 }
@@ -72,9 +72,11 @@ void recebeTime(Time* time, int completo){
 
 
 //monstradata no lcd
-//hora:min:seg
+//len(nome)<=7
+//
+//hora:min:seg nome
 //dia:mes:ano - dia_semana
-void escreveTime(Time* time){
+void escreveTime(Time* time, char* nome){
 	char str[3];
 
 	clearLCD();
@@ -92,6 +94,8 @@ void escreveTime(Time* time){
 	//segundo
 	hex2str(time->segundo,str);
 	escreveLCD(str);
+	
+	escreveLCD(nome);
 	escreveLCD("\n");
 
 	//dia

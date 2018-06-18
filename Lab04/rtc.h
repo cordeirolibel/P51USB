@@ -1,5 +1,7 @@
 
 #include <at89c5131.h>
+#define ON 1
+#define OFF 0
 
 #define C_Ds1307ReadMode_U8   0xD1u  // DS1307 ID in read mode
 #define C_Ds1307WriteMode_U8  0xD0u  // DS1307 ID in write mode
@@ -31,8 +33,34 @@ typedef struct
 	unsigned char minuto;
 	unsigned char segundo; //sempre iniciar com numero par
 	int _24h;
+	int estado; //para alarme
 } Time; 
-				
+
+int isEqual(Time t1, Time t2, int completo){
+	
+		if (t1.segundos != t2.segundos)
+			return 0;
+		else if (t1.minuto != t2.minuto)
+			return 0;
+		else if (t1.hora != t2.hora)
+			return 0;
+		
+		if (!completo)
+			return 1;
+		
+		else if (t1.dia != t2.dia)
+			return 0;
+		else if (t1.dia_semana != t2.dia_semana)
+			return 0;
+		else if (t1.mes != t2.mes)
+			return 0;
+		else if (t1.ano != t2.ano)
+			return 0;
+		
+		return 1;
+}
+
+
 void initRTC(void)
 {
     I2C_Init();                             // Initialize the I2c module.
