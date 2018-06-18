@@ -26,6 +26,18 @@ char getChar(void){
 	return caractere;
 }
 
+//se nao receber nenhum caractere depois de um tempo retorna
+char getCharLivre(void){
+	unsigned char caractere;
+	int i = 0;
+	while(!RI && i<100){i++}
+	if (i==100)
+		return 0;
+	caractere = SBUF;
+	RI = 0;
+	return caractere;
+}
+
 void getString(char* str, unsigned int tam){
  int i;
  char caractere;

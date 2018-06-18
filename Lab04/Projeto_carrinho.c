@@ -1,14 +1,10 @@
-#include <PWM.h>
+//#include <PWM.h>
 #include <at89c5131.h>
-#include <stdio.h>
-#include <lcd.h>
-#include <rtc.h>
-#include <serial.h>
-
+#include <relogio.h>
 // NAO USAR P3.0 E P3.1
 
-void escreveTime(Time* time);
-	
+Time tm_atual;
+
 // Main Function
 void main(void)
 {
@@ -31,60 +27,38 @@ void main(void)
 	
 	setTimeRTC(&time);
 	
-//mostrar time 
+	//mostrar time 
 	while(1){
-  getString(mensagem,10);
-  sendString(mensagem);
-  clearLCD();
-  escreveLCD(mensagem);
+		  getString(mensagem,10);
+		  sendString(mensagem);
+		  clearLCD();
+		  escreveLCD(mensagem);
+	}
  }
 }
 
-void hex2str(unsigned char hex, char* str){
- str[0] = hex/16+'0';
- str[1] = hex%16+'0';
- str[2] = '\0';
+//tela de relogio, sai com enter
+void relogio(){
+	int atual;
+	int antigo = -1;
+	char car;
+	
+	//sai com enter
+	while(1){
+		car = getCharLivre();
+		if (car == 'e') //edicao
+			recebeTime(&tm_atual,1);
+		else if (car == '\n')//saida
+			return;
+			
+		atual = tm_atual.segundo;
+		//so mostra no LCD se mudou
+		if (atual!=antigo){
+			escreveTime(&tm_atual);
+			antigo = atual;
+		}
+	}
+	
 }
 
-//monstradata no lcd
-//hora:min:seg
-//dia:mes:ano - dia_semana
-void escreveTime(Time* time){
- char str[3];
- 
- clearLCD();
- 
- //hora
- hex2str(time->hora,str);
- escreveLCD(str);
- escreveLCD(":");
- 
- //minuto
- hex2str(time->minuto,str);
- escreveLCD(str);
- escreveLCD(":");
- 
- //segundo
- hex2str(time->segundo,str);
- escreveLCD(str);
- escreveLCD("\n");
- 
- //dia
- hex2str(time->dia,str);
- escreveLCD(str);
- escreveLCD(":");
- 
- //mes
- hex2str(time->mes,str);
- escreveLCD(str);
- escreveLCD(":");
- 
- //ano
- hex2str(time->ano,str);
- escreveLCD(str);
- escreveLCD(" - ");
- 
- //dia da semana
- hex2str(time->dia_semana,str);
- escreveLCD(str);
-}
+
