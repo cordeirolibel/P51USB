@@ -377,9 +377,9 @@
           <GroupName>Source Group 1</GroupName>
           <Files>
             <File>
-              <FileName>main.c</FileName>
+              <FileName>Projeto_carrinho.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\main.c</FilePath>
+              <FilePath>.\Projeto_carrinho.c</FilePath>
             </File>
             <File>
               <FileName>lcd.h</FileName>
@@ -387,19 +387,9 @@
               <FilePath>.\lcd.h</FilePath>
             </File>
             <File>
-              <FileName>relogio.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\relogio.h</FilePath>
-            </File>
-            <File>
               <FileName>rtc.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\rtc.h</FilePath>
-            </File>
-            <File>
-              <FileName>PWM.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\PWM.h</FilePath>
             </File>
             <File>
               <FileName>serial.h</FileName>
@@ -407,9 +397,9 @@
               <FilePath>.\serial.h</FilePath>
             </File>
             <File>
-              <FileName>P51USBv1.0.h</FileName>
+              <FileName>relogio.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\P51USBv1.0.h</FilePath>
+              <FilePath>.\relogio.h</FilePath>
             </File>
           </Files>
         </Group>

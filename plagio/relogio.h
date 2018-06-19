@@ -1,7 +1,3 @@
-//#include <stdio.h>
-#include <at89c5131.h>
-#include <rtc.h>
-#include <serial.h>
 
 void hex2str(unsigned char hex, char* str){
 	str[0] = hex/16+'0';
@@ -95,19 +91,18 @@ void escreveTime(Time* time, char* nome){
 	hex2str(time->segundo,str);
 	escreveLCD(str);
 	
-	escreveLCD(" ");
 	escreveLCD(nome);
 	escreveLCD("\n");
 
 	//dia
 	hex2str(time->dia,str);
 	escreveLCD(str);
-	escreveLCD("/");
+	escreveLCD(":");
 
 	//mes
 	hex2str(time->mes,str);
 	escreveLCD(str);
-	escreveLCD("/");
+	escreveLCD(":");
 
 	//ano
 	hex2str(time->ano,str);
