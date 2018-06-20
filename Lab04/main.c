@@ -94,13 +94,13 @@ void telaRelogio(void){
   else if (car == 'a'){
    escreveLCD("\rAlarme \nAtivado");
    tm_alarme.estado = ON;
-   msdelay(1000);
+   msdelay(500);
   }
   //desativa
   else if (car == 'd'){
    escreveLCD("\rAlarme \nDesativado");
    tm_alarme.estado = OFF;
-   msdelay(1000);
+   msdelay(500);
   }
 	// Fuso horario Moscow
 	else if(car == 'm')
@@ -108,13 +108,13 @@ void telaRelogio(void){
 		if(!moscow){
 			showMoscow();
 			escreveLCD("\rMoscow \nAtivo");
-			msdelay(1000);
+			msdelay(500);
 			moscow = 1;
 		}
 		else{
 			saiMoscow();
 			escreveLCD("\rMoscow \nDesativo");
-			msdelay(1000);
+			msdelay(500);
 			moscow = 0;
 		}
 	}
@@ -126,7 +126,7 @@ void telaRelogio(void){
 		
 		if(tm_atual._24h == 0){
 			escreveLCD("\rModo 24h");
-		  msdelay(1000);
+		  msdelay(500);
 			tm_atual._24h = 1;
 			if(tm_atual.pm)
 			{
@@ -137,7 +137,7 @@ void telaRelogio(void){
 		}
 		else{
 			escreveLCD("\rModo 12h");
-		  msdelay(1000);
+		  msdelay(500);
 			tm_atual._24h = 0;
 			if (tm_atual.hora>12){
 				tm_atual.hora -= 12;
@@ -151,7 +151,7 @@ void telaRelogio(void){
 				tm_atual.pm = 0;
 		}
 		
-		timerDec2hex(&tm_cron);
+		timerDec2hex(&tm_atual);
 		setTimeRTC(&tm_atual);
 	}
 	// Cronometro
@@ -272,16 +272,19 @@ void telaRelogio(void){
 
 void saiMoscow(void)
 {
+	int hora;
 	getTimeRTC(&tm_atual);
 	timerHex2dec(&tm_atual);
-	tm_atual.hora = tm_atual.hora - 6;
-	if ((tm_atual.hora <= 0))
+	hora = tm_atual.hora;
+	hora = hora - 6;
+	if ((hora <= 0))
 	{
 		if (tm_atual._24h == 0){
-			tm_atual.hora = 12 + tm_atual.hora;			
+			hora = 12 + hora;
+			tm_atual.pm = 0;
 		}
 		else{
-			tm_atual.hora %= 24;
+			hora %= 24;
 		}
 		
 		tm_atual.dia -= 1;
@@ -298,6 +301,7 @@ void saiMoscow(void)
 		}
 	}
 	
+	tm_atual.hora = hora;
 	timerDec2hex(&tm_atual);
 	setTimeRTC(&tm_atual);
 }
@@ -311,7 +315,8 @@ void showMoscow(void)
 	{
 		if (tm_atual._24h == 0){
 			tm_atual.hora %= 12;
-			tm_atual.hora += 1;
+			tm_atual.pm = !(tm_atual.pm);
+			//tm_atual.hora += 1;
 		}
 		else {tm_atual.hora %= 24;}
 		
@@ -373,7 +378,7 @@ void verificaAlarme(void){
        LED = 1;
        return;
       }
-      msdelay(80);
+      msdelay(90);
      }
     }
     

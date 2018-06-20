@@ -45,6 +45,15 @@ int isEqual(Time t1, Time t2, int completo){
 			return 0;
 		else if (t1.hora != t2.hora)
 			return 0;
+		else if (t1._24h == 0)
+		{
+			if (t1.pm != t2.pm)
+			{
+				return 0;
+			}
+		}
+		else if(t1._24h != t2._24h)
+			return 0;
 		
 		if (!completo)
 			return 1;

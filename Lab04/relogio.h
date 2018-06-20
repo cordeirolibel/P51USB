@@ -4,6 +4,8 @@
 #include <serial.h>
 
 char hex2dec(char hex);
+void msdelay(unsigned int time);
+
 
 void hex2str(unsigned char hex, char* str){
 	str[0] = hex/16+'0';
@@ -35,7 +37,9 @@ int __recebe1argumeto(char *str){
 	sendString(": ");
 	
 	getString(mensagem,5);
-	escreveLCD(mensagem);
+	escreveLCD(&mensagem[1]);
+	//sendString(mensagem);
+	msdelay(100);
 	
 	return str2hex(mensagem);
 }
@@ -145,7 +149,7 @@ void recebeTime(Time* time, int completo){
 	}
 	else
 	{
-		if(dado >= dias_meses[mes_int]){time->dia = dias_meses[mes_int];}
+		if(dado >= dias_meses[mes_int-1]){time->dia = dias_meses[mes_int-1];}
 		else{time->dia = dado;}
 	}
 	
