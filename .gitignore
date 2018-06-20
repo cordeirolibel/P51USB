@@ -9,6 +9,8 @@
 *.uvgui.*
 *.uvguix.*
 
+*.zip
+
 # Listing files
 *.cod
 *.htm
