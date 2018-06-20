@@ -13,6 +13,10 @@ void telaAlarme(void);
 void verificaAlarme(void);
 void showMoscow(void);
 void saiMoscow(void);
+char dec2hex(char dec);
+void timerHex2dec(Time* t);
+void timerDec2hex(Time* t);
+char hex2dec(char hex);
 
 idata Time tm_atual;
 idata Time tm_alarme;
@@ -37,6 +41,32 @@ void main(void)
 	
 	clearLCD();
 	escreveLCD("OFF");
+}
+
+char dec2hex(char dec){
+ return ((dec/10)*16 + dec%10);
+}
+
+char hex2dec(char hex){
+ return ((hex/16)*10 + hex%16);
+}
+
+void timerDec2hex(Time* t){
+ t->ano = dec2hex(t->ano); 
+ t->mes = dec2hex(t->mes);
+ t->dia = dec2hex(t->dia);
+ t->hora = dec2hex(t->hora);
+ t->minuto = dec2hex(t->minuto);
+ t->segundo = dec2hex(t->segundo); 
+}
+
+void timerHex2dec(Time* t){
+ t->ano = hex2dec(t->ano); 
+ t->mes = hex2dec(t->mes);
+ t->dia = hex2dec(t->dia);
+ t->hora = hex2dec(t->hora);
+ t->minuto = hex2dec(t->minuto);
+ t->segundo = hex2dec(t->segundo); 
 }
 
 //tela de relogio, sai com enter
@@ -92,6 +122,8 @@ void telaRelogio(void){
 	else if (car == 't')
 	{
 		getTimeRTC(&tm_atual);
+		timerHex2dec(&tm_atual);
+		
 		if(tm_atual._24h == 0){
 			escreveLCD("\rModo 24h");
 		  msdelay(1000);
@@ -118,6 +150,8 @@ void telaRelogio(void){
 			else
 				tm_atual.pm = 0;
 		}
+		
+		timerDec2hex(&tm_cron);
 		setTimeRTC(&tm_atual);
 	}
 	// Cronometro
@@ -137,7 +171,9 @@ void telaRelogio(void){
 		{
 			car = getCharLivre();
 			verificaAlarme();
+			timerDec2hex(&tm_cron);
 			escreveTime(&tm_cron, "Crono");
+			timerHex2dec(&tm_cron);
 			
 			if (car == 'q')
 			{
@@ -166,7 +202,9 @@ void telaRelogio(void){
 						tm_cron.minuto = 0;
 						tm_cron.hora = 0;
 						
+						timerDec2hex(&tm_cron);
 						escreveTime(&tm_cron, "Crono");
+						timerHex2dec(&tm_cron);
 					}
 					else if (car == 'q')
 					{
@@ -211,11 +249,11 @@ void telaRelogio(void){
   atual = tm_atual.segundo;
   //so mostra no LCD se mudou
   if (atual!=antigo){
-		if (tm_atual._24h == 0)
+		if (tm_atual._24h == 1)
 		{
 			escreveTime(&tm_atual, "24h");
 		}
-		else if (tm_atual._24h == 1)
+		else if (tm_atual._24h == 0)
 		{
 			if (tm_atual.pm)
 			{
@@ -234,6 +272,8 @@ void telaRelogio(void){
 
 void saiMoscow(void)
 {
+	getTimeRTC(&tm_atual);
+	timerHex2dec(&tm_atual);
 	tm_atual.hora = tm_atual.hora - 6;
 	if ((tm_atual.hora <= 0))
 	{
@@ -258,11 +298,14 @@ void saiMoscow(void)
 		}
 	}
 	
+	timerDec2hex(&tm_atual);
 	setTimeRTC(&tm_atual);
 }
 
 void showMoscow(void)
 {
+	getTimeRTC(&tm_atual);
+	timerHex2dec(&tm_atual);
 	tm_atual.hora = tm_atual.hora + 6;
 	if ((tm_atual.hora >= 13 && tm_atual._24h == 0) || (tm_atual.hora >= 24 && tm_atual._24h == 1))
 	{
@@ -286,6 +329,7 @@ void showMoscow(void)
 		}
 	}
 	
+	timerDec2hex(&tm_atual);
 	setTimeRTC(&tm_atual);
 	
 }
