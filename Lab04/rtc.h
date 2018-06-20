@@ -91,13 +91,13 @@ void setTimeRTC(Time* time)
  
     I2C_Write(time->segundo);                    // Write sec from RAM address 00H
     I2C_Write(time->minuto);                    // Write min from RAM address 01H
-		if(!time->_24h){
+		if(!time->_24h){//12
 			write = time->hora|0x40;
-			if(!time->pm) // am
-				write |= 0x20;			
+			if(time->pm) // pm
+				write = write|0x20;			
 			I2C_Write(write);
 		}
-		else
+		else//24
 			I2C_Write(time->hora);                    // Write hour from RAM address 02H
     I2C_Write(time->dia_semana);                // Write weekDay on RAM address 03H
     I2C_Write(time->dia);                    // Write date on RAM address 04H
@@ -134,21 +134,23 @@ void getTimeRTC(Time *time)
     time->minuto = I2C_Read(1);                 // read minute and return Positive ACK
     time->hora = I2C_Read(1);
 	
-		if((time->hora)&0x40)//24h
+		if((time->hora)&0x40)//12h
 		{
-			time->hora = time->hora&0xBF;
-			time->_24h = 1;
-		}
-		else //12h
-		{
-			time->_24h = 0;
-			if((time->hora)&0x20)//am
+			if((time->hora)&0x20)//pm
 			{
-				time->hora = time->hora&0xDF;
+				time->hora = time->hora&0x1F;
+				time->pm = 1;
+			}
+			else {
+				time->hora = time->hora&0x1F;
 				time->pm = 0;
 			}
-			else 
-				time->pm = 1;
+			time->_24h = 0;
+		}
+		else //24h
+		{
+			time->hora = time->hora&0x3F;
+			time->_24h = 1;
 		}
     time->dia_semana = I2C_Read(1);           // read weekDay and return Positive ACK
     time->dia = I2C_Read(1);              // read Date and return Positive ACK

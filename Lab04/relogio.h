@@ -104,6 +104,14 @@ void escreveTime(Time* time, char* nome){
 	hex2str(time->segundo,str);
 	escreveLCD(str);
 	
+	if(!(time->_24))//12h
+	{
+		if(time->pm)
+			escreveLCD("A");
+		else
+			escreveLCD("P");
+	}
+	
 	escreveLCD(" ");
 	escreveLCD(nome);
 	escreveLCD("\n");
