@@ -1,4 +1,4 @@
-//#include <stdio.h>
+#include <stdio.h>
 #include <at89c5131.h>
 #include <rtc.h>
 #include <serial.h>
@@ -7,6 +7,8 @@ void hex2str(unsigned char hex, char* str){
 	str[0] = hex/16+'0';
 	str[1] = hex%16+'0';
 	str[2] = '\0';
+	//str[0] = hex/10 + 0x30;
+	//str[1] = hex%10 + 0x30;
 }
 
 unsigned char str2hex(char *str){
@@ -68,6 +70,13 @@ void recebeTime(Time* time, int completo){
 	
 	dado = __recebe1argumeto("(0-12h/1-24h)");
 	time->_24h = dado;
+	
+	if (time->_24h == 0)
+	{
+		dado = __recebe1argumeto("(0-AM/1-PM)");
+		time->pm = dado;
+	}
+
 }
 
 

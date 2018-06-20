@@ -132,7 +132,8 @@ void getTimeRTC(Time *time)
 
     time->segundo	= I2C_Read(1);                // read second and return Positive ACK
     time->minuto = I2C_Read(1);                 // read minute and return Positive ACK
-    time->hora = I2C_Read(1);               // read hour and return Negative/No ACK
+    time->hora = I2C_Read(1);
+	
 		if((time->hora)&0x40)//24h
 		{
 			time->hora = time->hora&0xBF;

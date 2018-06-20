@@ -91,11 +91,13 @@ void telaRelogio(void){
 	// Time mode 12AMPM / 24h 
 	else if (car == 't')
 	{
+		getTimeRTC(&tm_atual);
 		if(tm_atual._24h == 0){
 			escreveLCD("\rModo 24h");
 		  msdelay(1000);
 			tm_atual._24h = 1;
-			if(tm_atual.pm){
+			if(tm_atual.pm)
+			{
 				tm_atual.hora += 12;
 				if (tm_atual.hora == 24)
 						tm_atual.hora = 0;
@@ -116,6 +118,7 @@ void telaRelogio(void){
 			else
 				tm_atual.pm = 0;
 		}
+		setTimeRTC(&tm_atual);
 	}
 	// Cronometro
 	else if (car == 'k')
@@ -208,7 +211,22 @@ void telaRelogio(void){
   atual = tm_atual.segundo;
   //so mostra no LCD se mudou
   if (atual!=antigo){
-   escreveTime(&tm_atual,"Atual");
+		if (tm_atual._24h == 0)
+		{
+			escreveTime(&tm_atual, "24h");
+		}
+		else if (tm_atual._24h == 1)
+		{
+			if (tm_atual.pm)
+			{
+				escreveTime(&tm_atual, "PM");
+			}
+			else
+			{
+				escreveTime(&tm_atual, "AM");
+			}
+		}
+   
    antigo = atual;
   }
  }
